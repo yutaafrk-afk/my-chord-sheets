@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chord-sheets-v5';
+const CACHE_NAME = 'chord-sheets-v6';
 const urlsToCache = [
   './',
   './index.html',
@@ -9,7 +9,7 @@ const urlsToCache = [
   'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
   'https://unpkg.com/@babel/standalone/babel.min.js',
   'https://cdn.tailwindcss.com',
-  'https://unpkg.com/lucide@latest',
+  'https://unpkg.com/lucide@latest/dist/umd/lucide.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];
 
