@@ -1,71 +1,66 @@
-const CACHE_NAME = 'chord-sheets-v6';
+const CACHE_NAME = 'chord-sheets-v7';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png',
-  'https://unpkg.com/react@18/umd/react.production.min.js',
-  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
-  'https://unpkg.com/@babel/standalone/babel.min.js',
-  'https://cdn.tailwindcss.com',
-  'https://unpkg.com/lucide@latest/dist/umd/lucide.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  './icon-512.png'
 ];
 
-// インストール時に即座に有効化
+// インストール時に必要最小限のファイルだけをキャッシュ
 self.addEventListener('install', event => {
   console.log('[Service Worker] Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('[Service Worker] Caching all files');
+        console.log('[Service Worker] Caching app files');
         return cache.addAll(urlsToCache);
       })
-      .then(() => self.skipWaiting()) // すぐに有効化
+      .then(() => self.skipWaiting())
   );
 });
 
-// キャッシュファースト戦略（オフライン優先）
+// フェッチ戦略: 外部CDNは常にネットワークから取得
 self.addEventListener('fetch', event => {
+  const url = event.request.url;
+  
+  // 外部CDNのリソースは常にネットワークから取得（CORSエラー回避）
+  if (url.includes('unpkg.com') || 
+      url.includes('cdn.tailwindcss.com') ||
+      url.includes('cdnjs.cloudflare.com')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
+  // アプリ自体のファイルはキャッシュファースト
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // キャッシュがあればそれを返す
         if (response) {
           console.log('[Service Worker] Using cached:', event.request.url);
           return response;
         }
         
-        // キャッシュになければネットワークから取得し、キャッシュに保存
         return fetch(event.request)
           .then(response => {
-            // レスポンスが有効かチェック
-            if (!response || response.status !== 200 || response.type === 'error') {
-              return response;
-            }
-            
-            // CDNやHTTPSのリソースをキャッシュ
-            if (event.request.url.startsWith('http')) {
+            // 有効なレスポンスのみキャッシュ
+            if (response && response.status === 200) {
               const responseToCache = response.clone();
               caches.open(CACHE_NAME)
                 .then(cache => {
                   cache.put(event.request, responseToCache);
-                  console.log('[Service Worker] Cached:', event.request.url);
                 });
             }
-            
             return response;
           })
           .catch(() => {
-            // オフライン時は何も返せない
-            console.log('[Service Worker] Offline, no cache available for:', event.request.url);
+            console.log('[Service Worker] Offline, no cache:', event.request.url);
           });
       })
   );
 });
 
-// 古いキャッシュを削除し、即座に制御を取得
+// 古いキャッシュを削除
 self.addEventListener('activate', event => {
   console.log('[Service Worker] Activating...');
   event.waitUntil(
@@ -79,6 +74,6 @@ self.addEventListener('activate', event => {
         })
       );
     })
-    .then(() => self.clients.claim()) // すぐに制御を開始
+    .then(() => self.clients.claim())
   );
 });
