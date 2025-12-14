@@ -29,7 +29,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     
     <!-- jsPDF for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -51,19 +51,23 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
-        const { Music, Plus, Trash2, Edit2, Save, X, ChevronUp, ChevronDown, Download, Minus, Play, Pause, Printer, FileDown, ExternalLink } = lucide;
 
         // Lucide Iconコンポーネントのラッパー
-        const Icon = ({ icon: IconComponent, ...props }) => {
+        const Icon = ({ icon, className = '' }) => {
             const ref = React.useRef(null);
             
             React.useEffect(() => {
                 if (ref.current) {
-                    lucide.createElement(IconComponent).render(ref.current);
+                    // data-lucide属性を設定
+                    ref.current.setAttribute('data-lucide', icon);
+                    // Lucideアイコンを初期化
+                    if (window.lucide && window.lucide.createIcons) {
+                        window.lucide.createIcons({ icons: ref.current });
+                    }
                 }
-            }, [IconComponent]);
+            }, [icon]);
             
-            return <i ref={ref} {...props}></i>;
+            return <i ref={ref} className={className}></i>;
         };
 
         const ChordManager = () => {
