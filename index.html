@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="自分専用のコード譜管理アプリ - キー変更、編集、保存が簡単にできます">
+    <meta name="theme-color" content="#9333ea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="My Chord Sheets">
+    
+    <title>My Chord Sheets - コード譜管理</title>
+    
+    <!-- PWA用マニフェスト -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- アイコン -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel Standalone -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Music, Plus, Trash2, Edit2, Save, X, ChevronUp, ChevronDown, Download, Minus, Play, Pause, Printer, FileDown, ExternalLink } = lucide;
+
+        // Lucide Iconコンポーネントのラッパー
+        const Icon = ({ icon: IconComponent, ...props }) => {
+            const ref = React.useRef(null);
+            
+            React.useEffect(() => {
+                if (ref.current) {
+                    lucide.createElement(IconComponent).render(ref.current);
+                }
+            }, [IconComponent]);
+            
+            return <i ref={ref} {...props}></i>;
+        };
+
+        const ChordManager = () => {
+            const [songs, setSongs] = useState([]);
+            const [currentSong, setCurrentSong] = useState(null);
+            const [isEditing, setIsEditing] = useState(false);
+            const [editForm, setEditForm] = useState({ title: '', artist: '', originalKey: 'C', lyrics: '', referenceUrl: '' });
+            const [transposeSteps, setTransposeSteps] = useState(0);
+            const [showSongList, setShowSongList] = useState(true);
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+            const [deferredPrompt, setDeferredPrompt] = useState(null);
+            
+            // 自動スクロール関連
+            const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+            const [scrollSpeed, setScrollSpeed] = useState(1);
+            const scrollIntervalRef = React.useRef(null);
+
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const noteAliases = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
+
+            useEffect(() => {
+                loadSongs();
+                
+                // オンライン/オフライン状態を監視
+                const handleOnline = () => {
+                    setIsOnline(true);
+                    console.log('オンラインになりました');
+                };
+                const handleOffline = () => {
+                    setIsOnline(false);
+                    console.log('オフラインになりました');
+                };
+                
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+                
+                // PWAインストールプロンプトを監視
+                const handleBeforeInstall = (e) => {
+                    e.preventDefault();
+                    setDeferredPrompt(e);
+                    setShowInstallPrompt(true);
+                };
+                
+                window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+                
+                return () => {
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
+                    window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+                    // 自動スクロールのクリーンアップ
+                    if (scrollIntervalRef.current) {
+                        clearInterval(scrollIntervalRef.current);
+                    }
+                };
+            }, []);
+            
+            const handleInstallClick = async () => {
+                if (!deferredPrompt) return;
+                
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                
+                if (outcome === 'accepted') {
+                    console.log('PWAがインストールされました');
+                }
+                
+                setDeferredPrompt(null);
+                setShowInstallPrompt(false);
+            };
+            
+            // 現在のキー変更を楽曲に保存
+            const saveCurrentTranspose = () => {
+                if (!currentSong) return;
+                
+                const updatedSong = {
+                    ...currentSong,
+                    savedTranspose: transposeSteps,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                const allSongs = songs.map(s => s.id === updatedSong.id ? updatedSong : s);
+                localStorage.setItem('chordSheets', JSON.stringify(allSongs));
+                setSongs(allSongs);
+                setCurrentSong(updatedSong);
+                alert(`キー ${getTransposedKey(currentSong.originalKey, transposeSteps)} を保存しました`);
+            };
+            
+            // 楽曲選択時に保存されたキーを適用
+            const selectSong = (song) => {
+                setCurrentSong(song);
+                setIsEditing(false);
+                setTransposeSteps(song.savedTranspose || 0);
+                setShowSongList(false);
+                stopAutoScroll(); // 自動スクロール停止
+            };
+            
+            // 自動スクロール開始
+            const startAutoScroll = () => {
+                if (scrollIntervalRef.current) {
+                    clearInterval(scrollIntervalRef.current);
+                }
+                
+                setIsAutoScrolling(true);
+                scrollIntervalRef.current = setInterval(() => {
+                    window.scrollBy({
+                        top: scrollSpeed,
+                        behavior: 'auto'
+                    });
+                }, 16); // 約60fps
+            };
+            
+            // 自動スクロール停止
+            const stopAutoScroll = () => {
+                if (scrollIntervalRef.current) {
+                    clearInterval(scrollIntervalRef.current);
+                    scrollIntervalRef.current = null;
+                }
+                setIsAutoScrolling(false);
+            };
+            
+            // 自動スクロールのトグル
+            const toggleAutoScroll = () => {
+                if (isAutoScrolling) {
+                    stopAutoScroll();
+                } else {
+                    startAutoScroll();
+                }
+            };
+            
+            // PDF出力
+            const exportToPDF = () => {
+                if (!currentSong) return;
+                
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                // フォント設定（日本語対応）
+                doc.setFont('helvetica');
+                
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const margin = 15;
+                const contentWidth = pageWidth - (margin * 2);
+                const lineHeight = 6;
+                let yPosition = margin;
+                
+                // タイトル部分
+                doc.setFontSize(20);
+                doc.setFont('helvetica', 'bold');
+                doc.text(currentSong.title, margin, yPosition);
+                yPosition += 10;
+                
+                // アーティストとキー情報
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'normal');
+                const artistText = currentSong.artist || '不明';
+                const keyInfo = transposeSteps !== 0 
+                    ? `Key: ${currentSong.originalKey} → ${currentKey} (${transposeSteps > 0 ? '+' : ''}${transposeSteps})`
+                    : `Key: ${currentSong.originalKey}`;
+                doc.text(`${artistText} | ${keyInfo}`, margin, yPosition);
+                yPosition += 8;
+                
+                // 区切り線
+                doc.setDrawColor(147, 51, 234); // purple-600
+                doc.setLineWidth(0.5);
+                doc.line(margin, yPosition, pageWidth - margin, yPosition);
+                yPosition += 8;
+                
+                // 歌詞とコードを処理
+                const lyrics = currentSong.lyrics;
+                const lines = lyrics.split('\n');
+                
+                doc.setFontSize(11);
+                doc.setFont('courier', 'normal'); // 等幅フォント
+                
+                for (let i = 0; i < lines.length; i++) {
+                    let line = lines[i];
+                    
+                    // ページブレーク記号のチェック
+                    if (line.trim() === '---' || line.trim() === '===') {
+                        doc.addPage();
+                        yPosition = margin;
+                        
+                        // 新しいページにもヘッダー情報を追加
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'normal');
+                        doc.text(`${currentSong.title} - ${artistText} (${keyInfo})`, margin, yPosition);
+                        yPosition += 8;
+                        doc.setFontSize(11);
+                        doc.setFont('courier', 'normal');
+                        continue;
+                    }
+                    
+                    // ページの終わりに近づいたら自動改ページ
+                    if (yPosition > pageHeight - margin - 10) {
+                        doc.addPage();
+                        yPosition = margin;
+                        
+                        // ヘッダー情報
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'normal');
+                        doc.text(`${currentSong.title} - ${artistText} (${keyInfo})`, margin, yPosition);
+                        yPosition += 8;
+                        doc.setFontSize(11);
+                        doc.setFont('courier', 'normal');
+                    }
+                    
+                    // コードを移調して処理
+                    const processedLine = line.replace(/\[([A-G][#b]?[^\]]*)\]/g, (match, chord) => {
+                        return `[${transposeChord(chord, transposeSteps)}]`;
+                    });
+                    
+                    // テキストを行に分割（長い行の処理）
+                    const maxCharsPerLine = 110; // 横向きなので長めに
+                    if (processedLine.length > maxCharsPerLine) {
+                        const words = processedLine.split(' ');
+                        let currentLine = '';
+                        
+                        for (const word of words) {
+                            if ((currentLine + ' ' + word).length > maxCharsPerLine) {
+                                if (currentLine) {
+                                    doc.text(currentLine, margin, yPosition);
+                                    yPosition += lineHeight;
+                                }
+                                currentLine = word;
+                            } else {
+                                currentLine += (currentLine ? ' ' : '') + word;
+                            }
+                        }
+                        
+                        if (currentLine) {
+                            doc.text(currentLine, margin, yPosition);
+                            yPosition += lineHeight;
+                        }
+                    } else {
+                        doc.text(processedLine, margin, yPosition);
+                        yPosition += lineHeight;
+                    }
+                }
+                
+                // フッター（ページ番号）
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin - 20, pageHeight - 5);
+                }
+                
+                // PDFを保存
+                const filename = `${currentSong.title.replace(/[^\w\s]/gi, '')}_${currentKey}.pdf`;
+                doc.save(filename);
+            };
+
+            const loadSongs = () => {
+                try {
+                    const savedSongs = localStorage.getItem('chordSheets');
+                    if (savedSongs) {
+                        setSongs(JSON.parse(savedSongs).sort((a, b) => 
+                            new Date(b.updatedAt) - new Date(a.updatedAt)
+                        ));
+                    }
+                } catch (error) {
+                    console.log('楽曲データの読み込みエラー:', error);
+                }
+            };
+
+            const saveSong = () => {
+                if (!editForm.title.trim()) {
+                    alert('曲名を入力してください');
+                    return;
+                }
+
+                const songData = {
+                    id: currentSong?.id || Date.now().toString(),
+                    title: editForm.title,
+                    artist: editForm.artist,
+                    originalKey: editForm.originalKey,
+                    lyrics: editForm.lyrics,
+                    referenceUrl: editForm.referenceUrl,
+                    savedTranspose: currentSong?.savedTranspose || 0,
+                    updatedAt: new Date().toISOString()
+                };
+
+                try {
+                    const allSongs = songs.filter(s => s.id !== songData.id);
+                    allSongs.unshift(songData);
+                    localStorage.setItem('chordSheets', JSON.stringify(allSongs));
+                    setSongs(allSongs);
+                    setCurrentSong(songData);
+                    setIsEditing(false);
+                    setTransposeSteps(songData.savedTranspose);
+                } catch (error) {
+                    alert('保存に失敗しました');
+                }
+            };
+
+            const deleteSong = (id) => {
+                if (!confirm('この曲を削除しますか？')) return;
+                
+                try {
+                    const filteredSongs = songs.filter(s => s.id !== id);
+                    localStorage.setItem('chordSheets', JSON.stringify(filteredSongs));
+                    setSongs(filteredSongs);
+                    if (currentSong?.id === id) {
+                        setCurrentSong(null);
+                    }
+                } catch (error) {
+                    alert('削除に失敗しました');
+                }
+            };
+
+            const startEdit = (song = null) => {
+                if (song) {
+                    setEditForm({
+                        title: song.title,
+                        artist: song.artist,
+                        originalKey: song.originalKey,
+                        lyrics: song.lyrics,
+                        referenceUrl: song.referenceUrl || ''
+                    });
+                    setCurrentSong(song);
+                } else {
+                    setEditForm({ title: '', artist: '', originalKey: 'C', lyrics: '', referenceUrl: '' });
+                    setCurrentSong(null);
+                }
+                setIsEditing(true);
+                setShowSongList(false);
+            };
+
+            const cancelEdit = () => {
+                setIsEditing(false);
+                if (!currentSong) {
+                    setShowSongList(true);
+                }
+                stopAutoScroll(); // 編集キャンセル時に自動スクロール停止
+            };
+
+            const transposeChord = (chord, steps) => {
+                const match = chord.match(/^([A-G][#b]?)(.*)/);
+                if (!match) return chord;
+
+                let [, root, suffix] = match;
+                
+                if (noteAliases[root]) {
+                    root = noteAliases[root];
+                }
+
+                const index = notes.indexOf(root);
+                if (index === -1) return chord;
+
+                const newIndex = (index + steps + 12) % 12;
+                return notes[newIndex] + suffix;
+            };
+
+            const processLyrics = (lyrics, steps) => {
+                return lyrics.split('\n').map((line, lineIndex) => {
+                    // ページブレーク記号のチェック
+                    if (line.trim() === '---' || line.trim() === '===') {
+                        return { 
+                            lineIndex, 
+                            isPageBreak: true,
+                            parts: [{ type: 'text', content: line }] 
+                        };
+                    }
+                    
+                    const parts = [];
+                    let lastIndex = 0;
+                    const regex = /\[([A-G][#b]?[^\]]*)\]/g;
+                    let match;
+
+                    while ((match = regex.exec(line)) !== null) {
+                        if (match.index > lastIndex) {
+                            parts.push({
+                                type: 'text',
+                                content: line.slice(lastIndex, match.index)
+                            });
+                        }
+                        parts.push({
+                            type: 'chord',
+                            content: transposeChord(match[1], steps)
+                        });
+                        lastIndex = regex.lastIndex;
+                    }
+
+                    if (lastIndex < line.length) {
+                        parts.push({
+                            type: 'text',
+                            content: line.slice(lastIndex)
+                        });
+                    }
+
+                    return { lineIndex, parts: parts.length > 0 ? parts : [{ type: 'text', content: line }] };
+                });
+            };
+
+            const getTransposedKey = (originalKey, steps) => {
+                const index = notes.indexOf(originalKey);
+                if (index === -1) return originalKey;
+                return notes[(index + steps + 12) % 12];
+            };
+
+            const displayedLines = currentSong ? processLyrics(currentSong.lyrics, transposeSteps) : [];
+            const currentKey = currentSong ? getTransposedKey(currentSong.originalKey, transposeSteps) : 'C';
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
+                    <div className="max-w-6xl mx-auto">
+                        {/* オフライン状態表示 */}
+                        {!isOnline && (
+                            <div className="bg-yellow-500 text-white px-4 py-2 rounded-lg mb-4 flex items-center justify-center gap-2">
+                                <span className="font-bold">📡 オフラインモード</span>
+                                <span className="text-sm">- データは保存されていますが、同期はオンライン時に行われます</span>
+                            </div>
+                        )}
+                        
+                        {/* インストール促進バナー */}
+                        {showInstallPrompt && (
+                            <div className="bg-purple-600 text-white px-4 py-3 rounded-lg mb-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Icon icon="Download" className="w-6 h-6" />
+                                    <div>
+                                        <div className="font-bold">アプリとしてインストール</div>
+                                        <div className="text-sm text-purple-100">オフラインでも使えるようになります！</div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleInstallClick}
+                                        className="bg-white text-purple-600 px-4 py-2 rounded-lg font-bold hover:bg-purple-50 transition-colors"
+                                    >
+                                        インストール
+                                    </button>
+                                    <button
+                                        onClick={() => setShowInstallPrompt(false)}
+                                        className="text-white hover:bg-purple-700 px-3 py-2 rounded-lg transition-colors"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Icon icon="Music" className="w-8 h-8 text-purple-600" />
+                                    <div>
+                                        <h1 className="text-3xl font-bold text-gray-800">My Chord Sheets</h1>
+                                        {isOnline ? (
+                                            <span className="text-xs text-green-600 flex items-center gap-1">
+                                                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                                                オンライン
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-yellow-600 flex items-center gap-1">
+                                                <span className="w-2 h-2 bg-yellow-600 rounded-full"></span>
+                                                オフライン
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => startEdit()}
+                                    className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                                >
+                                    <Icon icon="Plus" className="w-5 h-5" />
+                                    新規作成
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {showSongList && (
+                                <div className="lg:col-span-1">
+                                    <div className="bg-white rounded-lg shadow-md p-4">
+                                        <h2 className="text-xl font-bold text-gray-800 mb-4">楽曲リスト</h2>
+                                        <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                                            {songs.length === 0 ? (
+                                                <p className="text-gray-500 text-center py-8">まだ楽曲がありません</p>
+                                            ) : (
+                                                songs.map(song => (
+                                                    <div
+                                                        key={song.id}
+                                                        className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                                            currentSong?.id === song.id
+                                                                ? 'border-purple-500 bg-purple-50'
+                                                                : 'border-gray-200 hover:border-purple-300'
+                                                        }`}
+                                                        onClick={() => selectSong(song)}
+                                                    >
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex-1">
+                                                                <div className="font-bold text-gray-800">{song.title}</div>
+                                                                {song.artist && (
+                                                                    <div className="text-sm text-gray-600">{song.artist}</div>
+                                                                )}
+                                                                {song.referenceUrl && (
+                                                                    <div className="flex items-center gap-1 text-xs text-blue-600 mt-1">
+                                                                        <Icon icon="ExternalLink" className="w-3 h-3" />
+                                                                        参照URL有り
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center justify-between mt-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                                                                    Key: {song.originalKey}
+                                                                </span>
+                                                                {song.savedTranspose !== undefined && song.savedTranspose !== 0 && (
+                                                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                                                        保存: {getTransposedKey(song.originalKey, song.savedTranspose)}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex gap-1">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        startEdit(song);
+                                                                    }}
+                                                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                                                                >
+                                                                    <Icon icon="Edit2" className="w-4 h-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        deleteSong(song.id);
+                                                                    }}
+                                                                    className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                                                >
+                                                                    <Icon icon="Trash2" className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className={showSongList ? 'lg:col-span-2' : 'lg:col-span-3'}>
+                                {isEditing ? (
+                                    <div className="bg-white rounded-lg shadow-md p-6">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <h2 className="text-2xl font-bold text-gray-800">
+                                                {currentSong ? '楽曲を編集' : '新規楽曲作成'}
+                                            </h2>
+                                            <button onClick={cancelEdit} className="text-gray-600 hover:text-gray-800">
+                                                <Icon icon="X" className="w-6 h-6" />
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">曲名 *</label>
+                                                <input
+                                                    type="text"
+                                                    value={editForm.title}
+                                                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                    placeholder="曲名を入力"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">アーティスト</label>
+                                                <input
+                                                    type="text"
+                                                    value={editForm.artist}
+                                                    onChange={(e) => setEditForm({ ...editForm, artist: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                    placeholder="アーティスト名を入力"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">参照URL（オプション）</label>
+                                                <div className="text-sm text-gray-600 mb-2">
+                                                    U-FRET、ChordWiki などの参照URLを保存できます
+                                                </div>
+                                                <input
+                                                    type="url"
+                                                    value={editForm.referenceUrl}
+                                                    onChange={(e) => setEditForm({ ...editForm, referenceUrl: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                    placeholder="https://www.ufret.jp/... または https://ja.chordwiki.org/..."
+                                                />
+                                                {editForm.referenceUrl && (
+                                                    <a
+                                                        href={editForm.referenceUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mt-2"
+                                                    >
+                                                        <Icon icon="ExternalLink" className="w-4 h-4" />
+                                                        リンクを開く
+                                                    </a>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">オリジナルキー</label>
+                                                <select
+                                                    value={editForm.originalKey}
+                                                    onChange={(e) => setEditForm({ ...editForm, originalKey: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                >
+                                                    {notes.map(note => (
+                                                        <option key={note} value={note}>{note}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">歌詞とコード</label>
+                                                <div className="text-sm text-gray-600 mb-2">
+                                                    <div className="mb-1">📝 コードは [C] [Am] [G7] のように [ ] で囲んでください</div>
+                                                    <div className="bg-blue-50 border border-blue-200 rounded p-2 mt-2">
+                                                        <strong>📄 PDF印刷用のページ区切り：</strong>
+                                                        <div className="mt-1">改行して <code className="bg-blue-100 px-2 py-0.5 rounded">---</code> または <code className="bg-blue-100 px-2 py-0.5 rounded">===</code> と入力すると、PDF出力時にそこで改ページされます</div>
+                                                    </div>
+                                                </div>
+                                                <textarea
+                                                    value={editForm.lyrics}
+                                                    onChange={(e) => setEditForm({ ...editForm, lyrics: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono"
+                                                    rows={20}
+                                                    placeholder="[C]君に会えた [Am]日から&#10;[F]僕の世界は [G]変わった&#10;&#10;---&#10;&#10;[C]2番の歌詞..."
+                                                />
+                                            </div>
+
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={saveSong}
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+                                                >
+                                                    <Icon icon="Save" className="w-5 h-5" />
+                                                    保存
+                                                </button>
+                                                <button
+                                                    onClick={cancelEdit}
+                                                    className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                                >
+                                                    キャンセル
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : currentSong ? (
+                                    <div className="bg-white rounded-lg shadow-md p-6">
+                                        <div className="flex items-start justify-between mb-6">
+                                            <div className="flex-1">
+                                                <h2 className="text-3xl font-bold text-gray-800">{currentSong.title}</h2>
+                                                {currentSong.artist && (
+                                                    <p className="text-lg text-gray-600 mt-1">{currentSong.artist}</p>
+                                                )}
+                                                {currentSong.referenceUrl && (
+                                                    <a
+                                                        href={currentSong.referenceUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 mt-2 bg-blue-50 px-3 py-1 rounded-lg"
+                                                    >
+                                                        <Icon icon="ExternalLink" className="w-4 h-4" />
+                                                        参照元を開く
+                                                    </a>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => setShowSongList(!showSongList)}
+                                                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                                >
+                                                    {showSongList ? 'リストを隠す' : 'リストを表示'}
+                                                </button>
+                                                <button
+                                                    onClick={exportToPDF}
+                                                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                                                    title="PDFで保存・印刷"
+                                                >
+                                                    <Icon icon="Printer" className="w-4 h-4" />
+                                                    PDF出力
+                                                </button>
+                                                <button
+                                                    onClick={() => startEdit(currentSong)}
+                                                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                                >
+                                                    <Icon icon="Edit2" className="w-4 h-4" />
+                                                    編集
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-purple-50 rounded-lg p-4 mb-6">
+                                            <div className="flex items-center justify-between flex-wrap gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-sm font-medium text-gray-700">
+                                                        オリジナルキー: {currentSong.originalKey}
+                                                    </span>
+                                                    <div className="h-4 w-px bg-gray-300" />
+                                                    <span className="text-sm font-medium text-gray-700">
+                                                        現在のキー: <span className="text-purple-700 text-lg font-bold">{currentKey}</span>
+                                                    </span>
+                                                    {transposeSteps !== 0 && (
+                                                        <span className="text-xs text-purple-600">
+                                                            ({transposeSteps > 0 ? '+' : ''}{transposeSteps})
+                                                        </span>
+                                                    )}
+                                                    {currentSong.savedTranspose !== undefined && currentSong.savedTranspose !== 0 && (
+                                                        <div className="h-4 w-px bg-gray-300" />
+                                                    )}
+                                                    {currentSong.savedTranspose !== undefined && currentSong.savedTranspose !== 0 && (
+                                                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                                            保存済: {getTransposedKey(currentSong.originalKey, currentSong.savedTranspose)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setTransposeSteps(Math.max(transposeSteps - 1, -11))}
+                                                        disabled={transposeSteps === -11}
+                                                        className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                    >
+                                                        <Icon icon="ChevronDown" className="w-5 h-5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setTransposeSteps(0)}
+                                                        disabled={transposeSteps === 0}
+                                                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                                                    >
+                                                        リセット
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setTransposeSteps(Math.min(transposeSteps + 1, 11))}
+                                                        disabled={transposeSteps === 11}
+                                                        className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                    >
+                                                        <Icon icon="ChevronUp" className="w-5 h-5" />
+                                                    </button>
+                                                    <div className="h-8 w-px bg-gray-300 mx-1" />
+                                                    <button
+                                                        onClick={saveCurrentTranspose}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                                                        title="このキーを保存すると、次回開いたときにこのキーで表示されます"
+                                                    >
+                                                        <Icon icon="Save" className="w-4 h-4" />
+                                                        このキーを保存
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 自動スクロールコントロール */}
+                                        <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                                            <div className="flex items-center justify-between flex-wrap gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-sm font-medium text-gray-700">自動スクロール</span>
+                                                    <button
+                                                        onClick={toggleAutoScroll}
+                                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                                                            isAutoScrolling
+                                                                ? 'bg-red-600 text-white hover:bg-red-700'
+                                                                : 'bg-green-600 text-white hover:bg-green-700'
+                                                        }`}
+                                                    >
+                                                        {isAutoScrolling ? (
+                                                            <>
+                                                                <Icon icon="Pause" className="w-4 h-4" />
+                                                                停止
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Icon icon="Play" className="w-4 h-4" />
+                                                                開始
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-sm font-medium text-gray-700">速度:</span>
+                                                    <button
+                                                        onClick={() => setScrollSpeed(Math.max(0.5, scrollSpeed - 0.5))}
+                                                        disabled={scrollSpeed <= 0.5}
+                                                        className="px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <Icon icon="Minus" className="w-4 h-4" />
+                                                    </button>
+                                                    <span className="text-base font-bold text-blue-700 min-w-[60px] text-center">
+                                                        {scrollSpeed.toFixed(1)}x
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setScrollSpeed(Math.min(5, scrollSpeed + 0.5))}
+                                                        disabled={scrollSpeed >= 5}
+                                                        className="px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <Icon icon="Plus" className="w-4 h-4" />
+                                                    </button>
+                                                    <div className="flex gap-1 ml-2">
+                                                        {[0.5, 1, 2, 3].map(speed => (
+                                                            <button
+                                                                key={speed}
+                                                                onClick={() => setScrollSpeed(speed)}
+                                                                className={`px-2 py-1 text-xs rounded ${
+                                                                    scrollSpeed === speed
+                                                                        ? 'bg-blue-600 text-white'
+                                                                        : 'bg-white border border-gray-300 hover:bg-gray-50'
+                                                                }`}
+                                                            >
+                                                                {speed}x
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-gray-50 rounded-lg p-6">
+                                            <div className="font-mono text-base leading-relaxed whitespace-pre-wrap">
+                                                {displayedLines.map(({ lineIndex, parts, isPageBreak }) => (
+                                                    isPageBreak ? (
+                                                        <div key={lineIndex} className="my-4 flex items-center">
+                                                            <div className="flex-1 border-t-2 border-dashed border-green-400"></div>
+                                                            <span className="px-3 text-sm text-green-600 font-bold">📄 ページ区切り</span>
+                                                            <div className="flex-1 border-t-2 border-dashed border-green-400"></div>
+                                                        </div>
+                                                    ) : (
+                                                        <div key={lineIndex} className="min-h-[1.5em]">
+                                                            {parts.map((part, partIndex) => (
+                                                                part.type === 'chord' ? (
+                                                                    <span
+                                                                        key={partIndex}
+                                                                        className="text-purple-700 font-bold bg-purple-100 px-1 rounded"
+                                                                    >
+                                                                        {part.content}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span key={partIndex} className="text-gray-800">
+                                                                        {part.content}
+                                                                    </span>
+                                                                )
+                                                            ))}
+                                                        </div>
+                                                    )
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                                        <Icon icon="Music" className="w-16 h-16 text-purple-300 mx-auto mb-4" />
+                                        <h3 className="text-xl font-bold text-gray-800 mb-2">楽曲を選択してください</h3>
+                                        <p className="text-gray-600">
+                                            左のリストから楽曲を選ぶか、新規作成ボタンで新しいコード譜を作成できます
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<ChordManager />, document.getElementById('root'));
+    </script>
+
+    <!-- Service Worker登録 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker登録成功 - オフライン対応完了！', registration);
+                        
+                        // 更新チェック
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'activated') {
+                                    console.log('🔄 新バージョンが利用可能です');
+                                    // 必要に応じてリロード促進
+                                    if (confirm('新しいバージョンが利用可能です。更新しますか？')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        console.log('❌ Service Worker登録失敗:', err);
+                    });
+                
+                // オフライン時の処理
+                window.addEventListener('offline', () => {
+                    console.log('📡 オフラインになりました - キャッシュからデータを読み込みます');
+                });
+                
+                window.addEventListener('online', () => {
+                    console.log('📡 オンラインに戻りました');
+                });
+            });
+        } else {
+            console.log('⚠️ このブラウザはService Workerに対応していません');
+        }
+    </script>
+</body>
+</html>

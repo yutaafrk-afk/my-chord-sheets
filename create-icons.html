@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+    
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            
+            // 背景（紫）
+            ctx.fillStyle = '#9333ea';
+            ctx.fillRect(0, 0, size, size);
+            
+            // 音符を描く（白）
+            ctx.fillStyle = '#ffffff';
+            
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = size / 192;
+            
+            // 音符の円
+            ctx.beginPath();
+            ctx.arc(centerX - 30 * scale, centerY + 30 * scale, 25 * scale, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 音符の棒
+            ctx.fillRect(centerX + 20 * scale, centerY - 50 * scale, 8 * scale, 80 * scale);
+            
+            // ♯記号
+            ctx.font = `bold ${80 * scale}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('♯', centerX + 40 * scale, centerY - 10 * scale);
+        }
+        
+        // 192x192アイコン
+        const canvas192 = document.getElementById('canvas192');
+        drawIcon(canvas192, 192);
+        
+        // 512x512アイコン
+        const canvas512 = document.getElementById('canvas512');
+        drawIcon(canvas512, 512);
+        
+        // ダウンロードリンクを作成
+        document.body.innerHTML += '<br><a download="icon-192.png" href="' + canvas192.toDataURL() + '">Download 192x192</a>';
+        document.body.innerHTML += '<br><a download="icon-512.png" href="' + canvas512.toDataURL() + '">Download 512x512</a>';
+    </script>
+</body>
+</html>

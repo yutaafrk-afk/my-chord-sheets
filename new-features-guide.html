@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新機能ガイド - My Chord Sheets</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.8;
+            background: linear-gradient(to bottom right, #f3e7ff, #e0f2fe);
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #9333ea;
+            border-bottom: 3px solid #9333ea;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #7c3aed;
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .feature {
+            background: #f9fafb;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #9333ea;
+            border-radius: 8px;
+        }
+        .feature h3 {
+            color: #9333ea;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .new-badge {
+            background: #ef4444;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+        .step {
+            background: #f3f4f6;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+        }
+        .tip {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .screenshot {
+            background: #e5e7eb;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 15px 0;
+            font-style: italic;
+            color: #6b7280;
+        }
+        ul {
+            padding-left: 25px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        code {
+            background: #1f2937;
+            color: #10b981;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .emoji {
+            font-size: 1.3em;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1><span class="emoji">🎉</span> My Chord Sheets - 新機能ガイド</h1>
+        
+        <p>バージョン 3.0 で以下の機能が追加されました！</p>
+
+        <h2><span class="emoji">🎹</span> 新機能一覧</h2>
+
+        <div class="feature">
+            <h3><span class="new-badge">NEW</span> キーの記憶機能</h3>
+            <p>各楽曲ごとに「よく使うキー」を保存できるようになりました。</p>
+            
+            <div class="step">
+                <strong>📍 使い方</strong>
+                <ol>
+                    <li>楽曲を開く</li>
+                    <li>↑↓ボタンで好みのキーに変更（例: C → D に+2）</li>
+                    <li>右上の<strong>「このキーを保存」</strong>ボタンをクリック</li>
+                    <li>次回この曲を開くと、自動的に保存したキーで表示されます</li>
+                </ol>
+            </div>
+
+            <div class="screenshot">
+                💾 保存されたキーは楽曲リストにも表示されます<br>
+                例: 「Key: C」の横に「保存: D」と表示
+            </div>
+
+            <div class="tip">
+                <strong>💡 こんな時に便利！</strong>
+                <ul>
+                    <li>自分の音域に合わせたキーを保存</li>
+                    <li>バンドで演奏する際の決まったキーを記録</li>
+                    <li>カラオケ用のキーを記録</li>
+                    <li>ギターのカポ位置に合わせたキーを保存</li>
+                </ul>
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ 注意</strong>
+                <ul>
+                    <li>保存後も自由にキー変更できます</li>
+                    <li>「リセット」ボタンでオリジナルキーに戻ります</li>
+                    <li>保存したキーは上書き可能です</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature">
+            <h3><span class="new-badge">NEW</span> 自動スクロール機能</h3>
+            <p>演奏中に自動で譜面がスクロールします。ハンズフリーで演奏に集中できます！</p>
+            
+            <div class="step">
+                <strong>📍 基本的な使い方</strong>
+                <ol>
+                    <li>楽曲を表示</li>
+                    <li><strong>「開始」</strong>ボタン（緑色）をクリック</li>
+                    <li>自動でスクロール開始</li>
+                    <li><strong>「停止」</strong>ボタン（赤色）で停止</li>
+                </ol>
+            </div>
+
+            <div class="step">
+                <strong>⚙️ 速度調整の方法</strong>
+                <ul>
+                    <li><strong>方法1:</strong> 「+」「-」ボタンで0.5刻みで調整</li>
+                    <li><strong>方法2:</strong> プリセットボタン（0.5x、1x、2x、3x）でワンクリック設定</li>
+                    <li>範囲: 0.5倍速 〜 5.0倍速</li>
+                </ul>
+            </div>
+
+            <div class="screenshot">
+                🎵 スクロール中でも速度変更可能！<br>
+                演奏のテンポに合わせてリアルタイムで調整できます
+            </div>
+
+            <div class="tip">
+                <strong>🎸 速度の目安</strong>
+                <ul>
+                    <li><strong>0.5x:</strong> ゆっくりしたバラード、練習用</li>
+                    <li><strong>1.0x:</strong> 標準的なテンポ（BPM 120前後）</li>
+                    <li><strong>2.0x:</strong> アップテンポな曲（BPM 150-180）</li>
+                    <li><strong>3.0x:</strong> 速い曲、ロック系</li>
+                </ul>
+            </div>
+
+            <div class="tip">
+                <strong>💡 使い方のコツ</strong>
+                <ul>
+                    <li>曲を再生しながら、スクロール速度を曲のテンポに合わせる</li>
+                    <li>イントロの間にスクロール速度を調整しておく</li>
+                    <li>ライブやリハーサルでタブレット＋スタンドで使うと便利</li>
+                    <li>画面を縦長にすると一度に多くの歌詞が見られます</li>
+                </ul>
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ 注意点</strong>
+                <ul>
+                    <li>編集モードに入ると自動スクロールは停止します</li>
+                    <li>別の曲に切り替えると停止します</li>
+                    <li>速度設定は保存されません（アプリを閉じるとリセット）</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature">
+            <h3><span class="new-badge">NEW</span> PDF出力・印刷機能</h3>
+            <p>コード譜を横向きPDFで保存・印刷できます。ライブや練習で紙の譜面が必要な時に便利！</p>
+            
+            <div class="step">
+                <strong>📍 基本的な使い方</strong>
+                <ol>
+                    <li>楽曲を表示</li>
+                    <li>好みのキーに変更（必要に応じて）</li>
+                    <li><strong>「PDF出力」</strong>ボタン（緑色）をクリック</li>
+                    <li>PDFファイルが自動的にダウンロードされます</li>
+                </ol>
+            </div>
+
+            <div class="step">
+                <strong>📄 ページ区切りの設定方法</strong>
+                <ol>
+                    <li>編集画面を開く</li>
+                    <li>改ページしたい場所に改行を入れる</li>
+                    <li><code>---</code> または <code>===</code> と入力</li>
+                    <li>保存</li>
+                    <li>PDF出力すると、その場所で改ページされます</li>
+                </ol>
+            </div>
+
+            <div class="screenshot">
+                📝 入力例:<br>
+                [C]1番の歌詞<br>
+                <br>
+                ---<br>
+                <br>
+                [C]2番の歌詞（新しいページから）
+            </div>
+
+            <div class="tip">
+                <strong>📄 PDF出力の特徴</strong>
+                <ul>
+                    <li><strong>横向き（landscape）:</strong> 1行が長くても見やすい</li>
+                    <li><strong>現在のキーで出力:</strong> 移調した状態で印刷できる</li>
+                    <li><strong>ページ番号付き:</strong> 「Page 1 of 3」のように表示</li>
+                    <li><strong>ヘッダー情報:</strong> 各ページにタイトル・アーティスト・キーを表示</li>
+                    <li><strong>等幅フォント:</strong> コードの位置が揃って見やすい</li>
+                </ul>
+            </div>
+
+            <div class="tip">
+                <strong>💡 便利な使い方</strong>
+                <ul>
+                    <li><strong>ライブ用譜面:</strong> A4横向きで印刷してバインダーに綴じる</li>
+                    <li><strong>タブレット保存:</strong> PDFをタブレットに保存してオフラインで見る</li>
+                    <li><strong>バンド共有:</strong> メンバーに同じキーのPDFを配布</li>
+                    <li><strong>セットリスト作成:</strong> 演奏順にPDFを保存・整理</li>
+                    <li><strong>練習用:</strong> 歌詞に書き込みしたい場合は印刷</li>
+                </ul>
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ ページ区切りのコツ</strong>
+                <ul>
+                    <li>サビやBメロの前で改ページすると見やすい</li>
+                    <li>長い曲は2-3ページに分けると良い</li>
+                    <li>間奏部分で改ページすると演奏しやすい</li>
+                    <li>PDF出力前にプレビューで確認（ブラウザの印刷プレビュー機能）</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature">
+            <h3><span class="new-badge">NEW</span> 参照URL保存機能</h3>
+            <p>U-FRETやChordWikiなどのコード譜サイトのURLを保存して、簡単に参照できます。</p>
+            
+            <div class="step">
+                <strong>📍 使い方</strong>
+                <ol>
+                    <li>U-FRETやChordWikiで曲を検索</li>
+                    <li>ページのURLをコピー</li>
+                    <li>アプリで新規楽曲作成または編集</li>
+                    <li>「参照URL」欄にペースト</li>
+                    <li>「リンクを開く」ボタンで参照サイトを確認</li>
+                    <li>見ながら自分でコード譜を入力</li>
+                    <li>保存</li>
+                </ol>
+            </div>
+
+            <div class="screenshot">
+                🔗 保存すると、楽曲表示画面に「参照元を開く」ボタンが表示され、<br>
+                ワンクリックで元のサイトを開けます
+            </div>
+
+            <div class="tip">
+                <strong>💡 なぜ手動入力？（著作権の尊重）</strong>
+                <ul>
+                    <li><strong>歌詞は著作物:</strong> 他サイトから自動コピーは著作権侵害になります</li>
+                    <li><strong>自分用にカスタマイズ:</strong> 手動入力なら自由に編集できます</li>
+                    <li><strong>キーも自由:</strong> 自分の音域に合わせて変更</li>
+                    <li><strong>構成も自由:</strong> ページ区切りを好きな場所に設定</li>
+                    <li><strong>学習にもなる:</strong> コード進行を理解しながら入力</li>
+                </ul>
+            </div>
+
+            <div class="tip">
+                <strong>🎸 便利な活用方法</strong>
+                <ul>
+                    <li><strong>複数サイトを参照:</strong> U-FRETとChordWikiを比較して最適なコード進行を選択</li>
+                    <li><strong>リンク集として:</strong> 好きな曲のコード譜URLを一箇所にまとめる</li>
+                    <li><strong>後で確認:</strong> 「この部分のコードどうだったっけ？」と思ったらすぐ開ける</li>
+                    <li><strong>オリジナルアレンジ:</strong> 基本は参照サイト、アレンジは自分流で</li>
+                </ul>
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ 重要な注意事項</strong>
+                <ul>
+                    <li>参照URLは<strong>あなた自身の記録用</strong>です</li>
+                    <li>歌詞やコードを他の人と共有する際は著作権に注意してください</li>
+                    <li>コード進行自体は著作権で保護されませんが、歌詞は保護されます</li>
+                    <li>個人の練習用として使用してください</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2><span class="emoji">🎯</span> 実際の使用例</h2>
+
+        <div class="feature">
+            <h3>📱 ライブ演奏での活用</h3>
+            <ol>
+                <li>事前に全楽曲で自分のキーを保存</li>
+                <li>各曲のページ区切りを設定</li>
+                <li><strong>PDFを出力して印刷またはタブレットに保存</strong></li>
+                <li>ライブ当日、タブレットをマイクスタンドに設置</li>
+                <li>必要に応じて自動スクロールも使用</li>
+            </ol>
+            <div class="tip" style="margin-top: 10px;">
+                <strong>💡 プロのヒント:</strong> タブレットと紙の譜面を併用すると安心！PDFを印刷してバックアップとして持っておくと、タブレットのバッテリーが切れても大丈夫。
+            </div>
+        </div>
+
+        <div class="feature">
+            <h3>🏠 自宅練習での活用</h3>
+            <ol>
+                <li><strong>U-FRETやChordWikiで曲を検索してURLを保存</strong></li>
+                <li><strong>参照サイトを見ながらコード譜を入力</strong></li>
+                <li>原曲キーで保存</li>
+                <li>自動スクロールを遅め（0.5x）で設定</li>
+                <li>ゆっくり練習</li>
+                <li>慣れてきたら速度を上げる</li>
+                <li>最終的に原曲スピードで演奏</li>
+            </ol>
+        </div>
+
+        <div class="feature">
+            <h3>🎤 カラオケ準備での活用</h3>
+            <ol>
+                <li><strong>U-FRETで好きなキーのコード譜を見つけてURLを保存</strong></li>
+                <li>カラオケで歌うキーを保存</li>
+                <li>家で練習する際にそのキーで表示</li>
+                <li>自動スクロールでカラオケのように練習</li>
+                <li>本番でもバッチリ！</li>
+            </ol>
+        </div>
+
+        <h2><span class="emoji">⚙️</span> その他の改善点</h2>
+
+        <div class="feature">
+            <h3>💾 データ表示の改善</h3>
+            <ul>
+                <li>楽曲リストに保存されたキーを表示</li>
+                <li>現在のキーと保存されたキーを同時に表示</li>
+                <li>分かりやすい色分け（紫：オリジナル、青：保存済）</li>
+            </ul>
+        </div>
+
+        <div class="feature">
+            <h3>🎨 UI/UXの改善</h3>
+            <ul>
+                <li>ボタンの配置を最適化</li>
+                <li>色分けで機能が分かりやすく</li>
+                <li>レスポンシブ対応の強化</li>
+                <li>タッチ操作の最適化</li>
+            </ul>
+        </div>
+
+        <h2><span class="emoji">🚀</span> アップデート方法</h2>
+
+        <div class="step">
+            <strong>すでにデプロイ済みの場合</strong>
+            <ol>
+                <li>ダウンロードしたZIPファイルを解凍</li>
+                <li>古いファイルを新しいファイルで上書き</li>
+                <li>GitHub/Netlifyに再アップロード</li>
+                <li>ブラウザでスーパーリロード（Ctrl + Shift + R）</li>
+            </ol>
+        </div>
+
+        <div class="tip">
+            <strong>💡 ヒント</strong><br>
+            既存のデータ（楽曲）は自動的に新しいバージョンに対応します。<br>
+            ただし、保存されたキー情報は新しく設定する必要があります。
+        </div>
+
+        <h2><span class="emoji">❓</span> よくある質問</h2>
+
+        <div class="feature">
+            <h3>Q1: 保存したキーは他のデバイスでも使える？</h3>
+            <p><strong>A:</strong> いいえ、データは各デバイスのブラウザに保存されます。スマホとPCで別々に設定する必要があります。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q2: 自動スクロールが速すぎる/遅すぎる</h3>
+            <p><strong>A:</strong> 速度調整ボタンで0.5〜5.0倍速の範囲で細かく調整できます。プリセットボタンも活用してください。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q3: 保存したキーを削除したい</h3>
+            <p><strong>A:</strong> リセットボタンでオリジナルキーに戻してから「このキーを保存」を押すと、保存がリセットされます。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q4: 自動スクロールが止まってしまう</h3>
+            <p><strong>A:</strong> 編集モードに入ったり、別の曲に切り替えると自動的に停止します。これは意図的な動作です。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q5: PDFが文字化けする</h3>
+            <p><strong>A:</strong> 現在、一部の特殊文字や絵文字は正しく表示されない場合があります。基本的な日本語とアルファベット、コード記号は問題なく表示されます。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q6: PDF出力時のキーを変えたい</h3>
+            <p><strong>A:</strong> PDF出力前に、画面上でキー変更してからPDF出力ボタンを押してください。現在表示されているキーで出力されます。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q7: ページ区切りが表示されない</h3>
+            <p><strong>A:</strong> <code>---</code>は改行して単独の行として入力してください。前後に空白行があるとより分かりやすく表示されます。</p>
+        </div>
+
+        <h2><span class="emoji">📝</span> 今後の予定機能</h2>
+
+        <div class="tip">
+            <strong>検討中の機能</strong>
+            <ul>
+                <li>スペースキーで自動スクロールの開始/停止</li>
+                <li>スクロール速度の保存（楽曲ごと）</li>
+                <li>カウントダウン機能（スクロール開始前の準備時間）</li>
+                <li>データのエクスポート/インポート機能</li>
+                <li>セットリスト機能</li>
+                <li><strong>PDF出力のカスタマイズ（フォントサイズ、余白調整）</strong></li>
+                <li><strong>複数曲を1つのPDFにまとめて出力</strong></li>
+                <li><strong>PDFプレビュー機能</strong></li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center; color: #6b7280;">
+            <p style="font-size: 1.2em;">🎸 良い演奏を！</p>
+            <p style="font-size: 0.9em;">Created with ❤️ by Claude</p>
+        </div>
+    </div>
+</body>
+</html>

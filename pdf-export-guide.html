@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF出力機能ガイド - My Chord Sheets</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.8;
+            background: linear-gradient(to bottom right, #f0fdf4, #dbeafe);
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #16a34a;
+            border-bottom: 3px solid #16a34a;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #15803d;
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .feature {
+            background: #f9fafb;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #16a34a;
+            border-radius: 8px;
+        }
+        .step {
+            background: #f0fdf4;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            border-left: 4px solid #22c55e;
+        }
+        .example {
+            background: #f3f4f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .tip {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        code {
+            background: #1f2937;
+            color: #10b981;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .emoji {
+            font-size: 1.3em;
+        }
+        ul, ol {
+            padding-left: 25px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #f3f4f6;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1><span class="emoji">📄</span> PDF出力機能 完全ガイド</h1>
+        
+        <p>コード譜を横向きPDFで保存・印刷できる機能です。ライブ、練習、共有に最適！</p>
+
+        <h2><span class="emoji">🚀</span> 基本的な使い方</h2>
+
+        <div class="step">
+            <strong>ステップ1: 楽曲を表示</strong>
+            <ol>
+                <li>楽曲リストから曲を選択</li>
+                <li>コード譜が表示されます</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <strong>ステップ2: キーを調整（オプション）</strong>
+            <ol>
+                <li>必要に応じて↑↓ボタンでキーを変更</li>
+                <li>現在表示されているキーでPDF出力されます</li>
+                <li>例: C → D に変更すると、PDF内のすべてのコードがDキーで出力</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <strong>ステップ3: PDF出力</strong>
+            <ol>
+                <li>右上の<strong>「PDF出力」</strong>ボタン（緑色、プリンターアイコン）をクリック</li>
+                <li>PDFファイルが自動的にダウンロードされます</li>
+                <li>ファイル名: 「曲名_キー.pdf」（例: 夜空ノムコウ_D.pdf）</li>
+            </ol>
+        </div>
+
+        <h2><span class="emoji">📋</span> ページ区切り機能</h2>
+
+        <div class="feature">
+            <h3>ページ区切りとは？</h3>
+            <p>長い歌詞を複数ページに分けて、見やすく印刷するための機能です。サビや2番の歌詞などで改ページできます。</p>
+        </div>
+
+        <div class="step">
+            <strong>📝 ページ区切りの設定方法</strong>
+            <ol>
+                <li>楽曲の「編集」ボタンをクリック</li>
+                <li>歌詞入力欄で、改ページしたい場所に移動</li>
+                <li>新しい行に <code>---</code> または <code>===</code> と入力</li>
+                <li>保存ボタンをクリック</li>
+            </ol>
+        </div>
+
+        <div class="example">入力例：
+
+[C]1番の歌詞が [Am]続きます
+[F]ここまでが [G]1番
+
+---
+
+[C]2番の歌詞は [Am]新しいページから
+[F]始まります [G]ねー
+
+===
+
+[C]3番も [Am]別ページで
+[F]見やすく [G]なります
+        </div>
+
+        <div class="tip">
+            <strong>💡 ページ区切りの表示</strong>
+            <p>保存後、楽曲を表示すると、ページ区切り部分に「📄 ページ区切り」という緑色の破線が表示されます。これでPDF出力時にどこで改ページされるかが分かります。</p>
+        </div>
+
+        <h2><span class="emoji">🎨</span> PDF出力の特徴</h2>
+
+        <table>
+            <tr>
+                <th>項目</th>
+                <th>説明</th>
+            </tr>
+            <tr>
+                <td><strong>用紙向き</strong></td>
+                <td>横向き（landscape） - 1行が長くても見やすい</td>
+            </tr>
+            <tr>
+                <td><strong>用紙サイズ</strong></td>
+                <td>A4</td>
+            </tr>
+            <tr>
+                <td><strong>フォント</strong></td>
+                <td>等幅フォント（Courier） - コードの位置が揃う</td>
+            </tr>
+            <tr>
+                <td><strong>キー表示</strong></td>
+                <td>移調後のキーで出力（変更されていれば矢印で表示）</td>
+            </tr>
+            <tr>
+                <td><strong>ページ番号</strong></td>
+                <td>各ページ右下に「Page 1 of 3」形式で表示</td>
+            </tr>
+            <tr>
+                <td><strong>ヘッダー</strong></td>
+                <td>各ページに曲名・アーティスト・キー情報</td>
+            </tr>
+        </table>
+
+        <h2><span class="emoji">💡</span> 便利な使い方</h2>
+
+        <div class="feature">
+            <h3>🎸 ライブ・リハーサル用</h3>
+            <ul>
+                <li>全楽曲をPDF出力してバインダーに綴じる</li>
+                <li>セットリスト順に並べる</li>
+                <li>メンバー全員に同じキーのPDFを配布</li>
+                <li>タブレットにPDFを入れて譜面台に置く</li>
+            </ul>
+        </div>
+
+        <div class="feature">
+            <h3>📱 タブレット活用</h3>
+            <ul>
+                <li>PDFをタブレットのPDFリーダーアプリに保存</li>
+                <li>オフラインでいつでも閲覧可能</li>
+                <li>Apple Pencilで書き込み（練習メモ）</li>
+                <li>セットリスト順にブックマーク</li>
+            </ul>
+        </div>
+
+        <div class="feature">
+            <h3>🏠 練習用</h3>
+            <ul>
+                <li>印刷してピアノの譜面台に置く</li>
+                <li>歌詞に書き込みながら練習</li>
+                <li>難しい部分にマーカーで印</li>
+                <li>複数のキーで印刷して比較</li>
+            </ul>
+        </div>
+
+        <div class="feature">
+            <h3>🎤 カラオケ用</h3>
+            <ul>
+                <li>自分の音域に合わせたキーで出力</li>
+                <li>スマホにPDFを保存</li>
+                <li>カラオケボックスで確認</li>
+            </ul>
+        </div>
+
+        <h2><span class="emoji">⚙️</span> ページ区切りのコツ</h2>
+
+        <div class="success">
+            <strong>✅ こんな場所でページ区切りすると良い：</strong>
+            <ul>
+                <li><strong>2番・3番の歌詞の前</strong> - 各番を別ページに</li>
+                <li><strong>サビの前</strong> - サビを見やすく強調</li>
+                <li><strong>間奏の後</strong> - 演奏の切り替わりポイント</li>
+                <li><strong>Cメロの前</strong> - 構成の変化を明確に</li>
+                <li><strong>ラスサビの前</strong> - クライマックスを分離</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ 避けた方が良い場所：</strong>
+            <ul>
+                <li>歌詞の途中 - 流れが途切れる</li>
+                <li>コード進行の途中 - 演奏がやりにくい</li>
+                <li>1〜2行ごと - ページ数が多すぎる</li>
+            </ul>
+        </div>
+
+        <h2><span class="emoji">📐</span> レイアウトの目安</h2>
+
+        <div class="tip">
+            <strong>1ページあたりの行数目安</strong>
+            <ul>
+                <li><strong>横向きA4:</strong> 約30〜35行</li>
+                <li><strong>余白:</strong> 上下左右 15mm</li>
+                <li><strong>1行の文字数:</strong> 約110文字（等幅フォント）</li>
+            </ul>
+        </div>
+
+        <div class="example">理想的な構成例：
+
+【1ページ目】
+- イントロ
+- 1番Aメロ
+- 1番Bメロ
+- サビ
+
+【2ページ目】
+- 間奏
+- 2番Aメロ
+- 2番Bメロ
+- サビ
+
+【3ページ目】
+- Cメロ
+- ラスサビ
+- アウトロ
+        </div>
+
+        <h2><span class="emoji">🖨️</span> 印刷のヒント</h2>
+
+        <div class="step">
+            <strong>プリンター設定</strong>
+            <ul>
+                <li><strong>用紙サイズ:</strong> A4</li>
+                <li><strong>向き:</strong> 横（landscape） - PDFの向きに合わせる</li>
+                <li><strong>余白:</strong> 標準</li>
+                <li><strong>カラー/白黒:</strong> 白黒でOK（コードは太字で見やすい）</li>
+            </ul>
+        </div>
+
+        <div class="tip">
+            <strong>💡 コスト節約のヒント</strong>
+            <ul>
+                <li>両面印刷で紙を節約</li>
+                <li>複数曲をまとめて印刷</li>
+                <li>ドラフト品質で十分読める</li>
+                <li>練習用は白黒、本番用はカラーで印刷</li>
+            </ul>
+        </div>
+
+        <h2><span class="emoji">❓</span> よくある質問</h2>
+
+        <div class="feature">
+            <h3>Q: PDFが文字化けします</h3>
+            <p><strong>A:</strong> 基本的な日本語、英語、数字、コード記号（#、♭など）は問題なく表示されます。特殊な絵文字や記号は正しく表示されない場合があります。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q: フォントサイズを変更したい</h3>
+            <p><strong>A:</strong> 現在はフォントサイズ固定ですが、今後のアップデートで調整機能を追加予定です。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q: ページ区切りが表示されない</h3>
+            <p><strong>A:</strong> <code>---</code> は単独の行として入力してください。前後に空白行があるとより分かりやすく表示されます。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q: PDFのキーを変えたい</h3>
+            <p><strong>A:</strong> PDF出力前に画面上でキー変更してから「PDF出力」ボタンを押してください。表示中のキーで出力されます。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q: 複数曲を1つのPDFにまとめたい</h3>
+            <p><strong>A:</strong> 現在は1曲ずつの出力ですが、今後のアップデートでセットリスト機能として追加予定です。</p>
+        </div>
+
+        <div class="feature">
+            <h3>Q: タブレットで見る時のおすすめアプリは？</h3>
+            <p><strong>A:</strong></p>
+            <ul>
+                <li><strong>iPad:</strong> Apple Books、GoodNotes（書き込み可）</li>
+                <li><strong>Android:</strong> Adobe Acrobat Reader、Xodo PDF</li>
+                <li><strong>共通:</strong> Dropbox、Google Drive（クラウド同期）</li>
+            </ul>
+        </div>
+
+        <h2><span class="emoji">🎯</span> 実践例</h2>
+
+        <div class="success">
+            <strong>🎸 アコースティックライブの準備</strong>
+            <ol>
+                <li>セットリスト15曲を決定</li>
+                <li>各曲で自分の歌いやすいキーを保存</li>
+                <li>ページ区切りを設定（サビ前、2番前など）</li>
+                <li>全曲PDF出力</li>
+                <li>セットリスト順にページ番号を書き込む</li>
+                <li>A4横向きで印刷してクリアファイルに</li>
+                <li>バックアップとしてタブレットにも保存</li>
+                <li>本番はタブレット、リハは紙の譜面を使用</li>
+            </ol>
+        </div>
+
+        <div class="success">
+            <strong>🎤 バンド練習の譜面共有</strong>
+            <ol>
+                <li>バンドで演奏するキーを決定</li>
+                <li>そのキーでPDF出力</li>
+                <li>メンバー全員にLINEやメールで送信</li>
+                <li>全員が同じキー、同じレイアウトの譜面を使用</li>
+                <li>「2ページ目のサビから」など指示が明確に</li>
+            </ol>
+        </div>
+
+        <h2><span class="emoji">🔮</span> 今後の追加予定機能</h2>
+
+        <div class="tip">
+            <ul>
+                <li>フォントサイズ調整</li>
+                <li>余白のカスタマイズ</li>
+                <li>複数曲をまとめて1つのPDFに</li>
+                <li>PDFプレビュー機能</li>
+                <li>縦向き出力オプション</li>
+                <li>コードダイアグラム表示</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center; color: #6b7280;">
+            <p style="font-size: 1.2em;">📄 見やすい譜面で良い演奏を！</p>
+            <p style="font-size: 0.9em;">Created with ❤️ by Claude</p>
+        </div>
+    </div>
+</body>
+</html>

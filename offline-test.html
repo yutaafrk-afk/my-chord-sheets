@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>オフライン機能テスト手順</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.8;
+            background: linear-gradient(to bottom right, #f3e7ff, #e0f2fe);
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #9333ea;
+            border-bottom: 3px solid #9333ea;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #7c3aed;
+            margin-top: 30px;
+        }
+        .step {
+            background: #f3f4f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #9333ea;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d1fae5;
+            border-left-color: #10b981;
+        }
+        .warning {
+            background: #fef3c7;
+            border-left-color: #f59e0b;
+        }
+        code {
+            background: #1f2937;
+            color: #10b981;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .emoji {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1><span class="emoji">📡</span>My Chord Sheets - オフライン機能テスト手順</h1>
+        
+        <h2>🎯 オフライン対応の仕組み</h2>
+        <p>このアプリは<strong>PWA（Progressive Web App）</strong>として作られており、以下の技術でオフライン動作を実現しています：</p>
+        <ul>
+            <li><strong>Service Worker</strong> - バックグラウンドで動作し、ファイルをキャッシュ</li>
+            <li><strong>Cache API</strong> - HTML/CSS/JavaScriptを端末に保存</li>
+            <li><strong>LocalStorage</strong> - あなたの楽曲データを保存</li>
+        </ul>
+
+        <h2>✅ オフライン機能のテスト方法</h2>
+
+        <div class="step">
+            <strong>ステップ 1: アプリを公開する</strong>
+            <p>GitHub PagesまたはNetlifyでアプリをデプロイ（README参照）</p>
+        </div>
+
+        <div class="step">
+            <strong>ステップ 2: 初回アクセス（オンライン状態）</strong>
+            <p>デプロイしたURLにアクセス → 全ファイルが自動的にキャッシュされます</p>
+            <p>開発者ツール（F12）→ Consoleタブで以下のメッセージを確認：<br>
+            <code>✅ Service Worker登録成功 - オフライン対応完了！</code></p>
+        </div>
+
+        <div class="step success">
+            <strong>ステップ 3: オフラインモードをテスト</strong>
+            <p><strong>方法A: ブラウザのDevToolsを使用</strong></p>
+            <ol>
+                <li>F12キーで開発者ツールを開く</li>
+                <li>Networkタブを選択</li>
+                <li>「Offline」にチェックを入れる</li>
+                <li>ページをリロード（F5）</li>
+            </ol>
+            <p><strong>方法B: スマホの機内モード</strong></p>
+            <ol>
+                <li>スマホでアプリにアクセス</li>
+                <li>機内モードをONにする</li>
+                <li>アプリを開く</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <strong>ステップ 4: 動作確認</strong>
+            <p>オフライン状態でも以下が動作すること：</p>
+            <ul>
+                <li>✅ アプリが開く</li>
+                <li>✅ 既存の楽曲が表示される</li>
+                <li>✅ 新しい楽曲を作成・編集できる</li>
+                <li>✅ キー変更が動作する</li>
+                <li>✅ ヘッダーに「オフライン」表示が出る</li>
+                <li>✅ 黄色い「オフラインモード」バナーが表示される</li>
+            </ul>
+        </div>
+
+        <div class="step warning">
+            <strong>ステップ 5: オンラインに戻る</strong>
+            <ol>
+                <li>オフラインモードを解除</li>
+                <li>ページをリロード</li>
+                <li>「オンライン」表示に変わることを確認</li>
+                <li>オフライン中に作成したデータが残っていることを確認</li>
+            </ol>
+        </div>
+
+        <h2>📱 スマホでのインストールとオフラインテスト</h2>
+        
+        <div class="step">
+            <strong>iOS（Safari）</strong>
+            <ol>
+                <li>Safariでアプリを開く</li>
+                <li>共有ボタン（□に↑）→「ホーム画面に追加」</li>
+                <li>ホーム画面のアイコンからアプリを起動</li>
+                <li>機内モードをON</li>
+                <li>アプリが動くことを確認！</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <strong>Android（Chrome）</strong>
+            <ol>
+                <li>Chromeでアプリを開く</li>
+                <li>「インストール」バナーをタップ、または</li>
+                <li>メニュー（⋮）→「アプリをインストール」</li>
+                <li>ホーム画面のアイコンからアプリを起動</li>
+                <li>機内モードをON</li>
+                <li>アプリが動くことを確認！</li>
+            </ol>
+        </div>
+
+        <h2>🔍 キャッシュの確認方法</h2>
+        
+        <div class="step">
+            <strong>Chrome/Edge開発者ツール</strong>
+            <ol>
+                <li>F12キーで開発者ツールを開く</li>
+                <li>「Application」タブ（または「アプリケーション」）</li>
+                <li>左メニューの「Cache Storage」を展開</li>
+                <li><code>chord-sheets-v2</code> というキャッシュを確認</li>
+                <li>中に全ファイルが保存されていることを確認</li>
+            </ol>
+            <p>また、「Service Workers」セクションで登録状態も確認できます</p>
+        </div>
+
+        <h2>⚠️ トラブルシューティング</h2>
+        
+        <div class="step warning">
+            <strong>問題: オフラインで動かない</strong>
+            <p><strong>解決方法:</strong></p>
+            <ul>
+                <li>HTTPSでアクセスしているか確認（GitHub Pages/Netlifyは自動的にHTTPS）</li>
+                <li>初回アクセス時はオンラインである必要があります</li>
+                <li>Consoleエラーを確認（F12 → Console）</li>
+                <li>Service Workerが登録されているか確認（F12 → Application → Service Workers）</li>
+            </ul>
+        </div>
+
+        <div class="step warning">
+            <strong>問題: 古いバージョンが表示される</strong>
+            <p><strong>解決方法:</strong></p>
+            <ul>
+                <li>ブラウザのキャッシュをクリア</li>
+                <li>Ctrl + Shift + R（スーパーリロード）</li>
+                <li>開発者ツール → Application → Service Workers → Unregister</li>
+            </ul>
+        </div>
+
+        <h2>🎉 成功の確認</h2>
+        
+        <div class="step success">
+            <p><strong>以下がすべて達成できればオフライン対応完了です！</strong></p>
+            <ul>
+                <li>✅ 完全にネット接続を切った状態でアプリが開く</li>
+                <li>✅ データの作成・編集・削除ができる</li>
+                <li>✅ キー変更が動作する</li>
+                <li>✅ スマホのホーム画面から普通のアプリのように起動できる</li>
+                <li>✅ 圏外・地下鉄・飛行機の中でも使える</li>
+            </ul>
+            <p style="font-size: 1.2em; font-weight: bold; color: #10b981; margin-top: 20px;">
+                🎸 これで外出先でもいつでもどこでもコード譜を見られます！
+            </p>
+        </div>
+
+        <h2>📝 補足情報</h2>
+        <ul>
+            <li><strong>データの保存先:</strong> LocalStorage（あなたのブラウザ内）</li>
+            <li><strong>容量制限:</strong> 通常5〜10MB（数百曲は余裕で保存可能）</li>
+            <li><strong>同期:</strong> なし（各デバイス独立）</li>
+            <li><strong>プライバシー:</strong> データは外部に送信されません</li>
+        </ul>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center; color: #6b7280;">
+            <p>Created with ❤️ by Claude</p>
+            <p style="font-size: 0.9em;">PWA技術により、完全オフライン対応を実現</p>
+        </div>
+    </div>
+</body>
+</html>
