@@ -20,6 +20,7 @@
         .tab-inactive { background: #e5e7eb; color: #6b7280; }
         .tab-chord { background: #3b82f6; color: white; }
         .tab-lyric { background: #f59e0b; color: white; }
+        .tab-success { background: #10b981; color: white; }
         .input-group { margin-bottom: 20px; }
         .label { display: block; font-size: 15px; font-weight: 600; color: #374151; margin-bottom: 10px; }
         .input { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; }
@@ -87,7 +88,7 @@
 
         const BlockEditor = () => {
             const [blocks, setBlocks] = useState([]);
-            const [activeTab, setActiveTab] = useState('lyric');
+            const [activeTab, setActiveTab] = useState('paste');
             const [songKey, setSongKey] = useState('C');
             const [keyType, setKeyType] = useState('major');
             
@@ -98,37 +99,73 @@
             const [chordSize, setChordSize] = useState(16);
             const [insertPosition, setInsertPosition] = useState(null);
             
+            const [pasteInput, setPasteInput] = useState('');
+            const [pastePreview, setPastePreview] = useState([]);
+            
             const [selectedBlocks, setSelectedBlocks] = useState([]);
             const [selectedChars, setSelectedChars] = useState([]);
             const [showSetup, setShowSetup] = useState(true);
 
-            // URLパラメータから自動読み込み
+            // コード判定
+            const isChordLine = (line) => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.length > 50) return false;
+                if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(trimmed)) return false;
+                const chordPattern = /^[A-G][#b♯♭]?(?:m|maj|min|sus|dim|aug|add|M|6|7|9|11|13)*(?:\/[A-G][#b♯♭]?)?(\s+[A-G][#b♯♭]?(?:m|maj|min|sus|dim|aug|add|M|6|7|9|11|13)*(?:\/[A-G][#b♯♭]?)?)*$/;
+                return chordPattern.test(trimmed);
+            };
+
+            // 貼り付けテキストをパース
             useEffect(() => {
-                const params = new URLSearchParams(window.location.search);
-                const dataParam = params.get('data');
-                
-                if (dataParam) {
-                    try {
-                        const decoded = decodeURIComponent(dataParam);
-                        const data = JSON.parse(decoded);
-                        
-                        if (data.blocks && Array.isArray(data.blocks)) {
-                            const importedBlocks = data.blocks.map((block, idx) => ({
-                                ...block,
-                                id: Date.now() + idx
-                            }));
-                            
-                            setBlocks(importedBlocks);
-                            setShowSetup(false);
-                            
-                            // URLをクリーンにする
-                            window.history.replaceState({}, '', window.location.pathname);
-                        }
-                    } catch (error) {
-                        console.error('データの読み込みに失敗:', error);
-                    }
+                if (!pasteInput.trim()) {
+                    setPastePreview([]);
+                    return;
                 }
-            }, []);
+
+                const lines = pasteInput.split('\n');
+                const parsed = [];
+
+                lines.forEach(line => {
+                    const trimmed = line.trim();
+                    if (!trimmed || trimmed.length < 1) return;
+
+                    if (isChordLine(trimmed)) {
+                        parsed.push({
+                            type: 'chord',
+                            content: trimmed,
+                            fontSize: chordSize
+                        });
+                    } else if (trimmed.length < 100) {
+                        parsed.push({
+                            type: 'lyric',
+                            content: trimmed,
+                            fontSize: lyricSize,
+                            charSizes: trimmed.split('').map(() => lyricSize)
+                        });
+                    }
+                });
+
+                setPastePreview(parsed);
+            }, [pasteInput]);
+
+            // 貼り付けから取り込み
+            const importFromPaste = () => {
+                if (pastePreview.length === 0) {
+                    alert('取り込むデータがありません');
+                    return;
+                }
+
+                const newBlocks = pastePreview.map((item, idx) => ({
+                    ...item,
+                    id: Date.now() + idx
+                }));
+
+                setBlocks([...blocks, ...newBlocks]);
+                setPasteInput('');
+                setPastePreview([]);
+                alert(`${newBlocks.length}個のブロックを追加しました！`);
+                setActiveTab('lyric');
+            };
 
             const addLyric = () => {
                 if (!lyricInput.trim()) return;
@@ -251,8 +288,8 @@
             // アプリのURL（GitHubにアップロード後のURL）
             const appUrl = 'https://yutaafrk-afk.github.io/my-chord-sheets/block-editor-v3.html';
 
-            // ブックマークレットコード
-            const bookmarkletCode = `javascript:(function(){const isChord=t=>{const e=t.trim();return!(!e||e.length>50||/[\\u3040-\\u309F\\u30A0-\\u30FF\\u4E00-\\u9FAF]/.test(e))&&/^[A-G][#b♯♭]?(?:m|maj|min|sus|dim|aug|add|M|6|7|9|11|13)*(?:\\/[A-G][#b♯♭]?)?( +[A-G][#b♯♭]?(?:m|maj|min|sus|dim|aug|add|M|6|7|9|11|13)*(?:\\/[A-G][#b♯♭]?)?)*$/.test(e)};const blocks=[];document.querySelectorAll('pre, code').forEach(el=>{const lines=(el.textContent||'').split('\\n');lines.forEach(line=>{const t=line.trim();if(!t||t.length<1)return;if(isChord(t)){blocks.push({type:'chord',content:t,fontSize:16})}else if(t.length<100){blocks.push({type:'lyric',content:t,fontSize:20,charSizes:t.split('').map(()=>20)})}})});if(blocks.length===0){alert('コード譜を抽出できませんでした');return}const data=JSON.stringify({blocks});const url='${appUrl}?data='+encodeURIComponent(data);window.location.href=url})();`;
+            // ブックマークレットコード（テキストをクリップボードにコピー）
+            const bookmarkletCode = `javascript:(function(){let text='';document.querySelectorAll('pre, code, [class*="chord"], [class*="lyric"]').forEach(el=>{text+=el.textContent+'\\n'});if(!text.trim()){text=document.body.innerText}navigator.clipboard.writeText(text).then(()=>{alert('コピーしました！\\n\\n次に:\\n1. コード譜アプリを開く\\n2. 「📋貼付」タブを開く\\n3. Ctrl+V で貼り付け');window.open('${appUrl}','_blank')}).catch(()=>{alert('コピーに失敗しました')})})();`;
 
             return (
                 <div>
@@ -303,10 +340,20 @@
                                 <div className="step">
                                     <span className="step-number">3</span>
                                     <strong>ブックマークバーの「コード譜取込」をクリック</strong>
+                                    <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '6px' }}>
+                                        → コード譜がクリップボードにコピーされ、このアプリが開きます
+                                    </div>
+                                </div>
+
+                                <div className="arrow">↓</div>
+
+                                <div className="step">
+                                    <span className="step-number">4</span>
+                                    <strong>「📋貼付」タブで Ctrl+V で貼り付け</strong>
                                 </div>
 
                                 <div className="success-msg">
-                                    ✅ 自動的にこのページに戻ってきてコード譜が取り込まれます！
+                                    ✅ コード譜がコピーされて、自動的に貼付タブが開きます！
                                 </div>
                             </div>
                         )}
@@ -332,11 +379,58 @@
                             <div className="card-title">入力</div>
                             
                             <div className="tabs">
+                                <button onClick={() => setActiveTab('paste')} className={`tab ${activeTab === 'paste' ? 'tab-success' : 'tab-inactive'}`}>📋 貼付</button>
                                 <button onClick={() => setActiveTab('lyric')} className={`tab ${activeTab === 'lyric' ? 'tab-lyric' : 'tab-inactive'}`}>🎤 歌詞</button>
                                 <button onClick={() => setActiveTab('chord')} className={`tab ${activeTab === 'chord' ? 'tab-chord' : 'tab-inactive'}`}>🎵 コード</button>
                             </div>
 
-                            {activeTab === 'lyric' ? (
+                            {activeTab === 'paste' ? (
+                                <div>
+                                    <div className="input-group">
+                                        <label className="label">U-FRETからコピーしたテキストを貼り付け</label>
+                                        <textarea 
+                                            value={pasteInput} 
+                                            onChange={(e) => setPasteInput(e.target.value)} 
+                                            className="textarea" 
+                                            placeholder="Ctrl+V で貼り付けてください"
+                                            style={{ minHeight: '200px' }}
+                                        ></textarea>
+                                        <div className="hint">
+                                            💡 ブックマークレットでコピーしたテキストをここに貼り付け
+                                        </div>
+                                    </div>
+
+                                    {pastePreview.length > 0 && (
+                                        <div style={{ background: '#f0fdf4', border: '2px solid #22c55e', borderRadius: '8px', padding: '16px', marginTop: '16px' }}>
+                                            <div style={{ fontWeight: 'bold', marginBottom: '12px', color: '#065f46', fontSize: '16px' }}>
+                                                ✓ プレビュー（{pastePreview.length}行）
+                                            </div>
+                                            <div style={{ maxHeight: '250px', overflowY: 'auto', marginBottom: '16px' }}>
+                                                {pastePreview.slice(0, 30).map((item, idx) => (
+                                                    <div key={idx} style={{ 
+                                                        padding: '8px', 
+                                                        marginBottom: '4px', 
+                                                        borderRadius: '4px',
+                                                        background: item.type === 'chord' ? '#dbeafe' : '#fef3c7',
+                                                        color: item.type === 'chord' ? '#1e40af' : '#78350f',
+                                                        fontWeight: item.type === 'chord' ? 'bold' : 'normal'
+                                                    }}>
+                                                        {item.type === 'chord' ? '🎵' : '🎤'} {item.content}
+                                                    </div>
+                                                ))}
+                                                {pastePreview.length > 30 && (
+                                                    <div style={{ textAlign: 'center', color: '#6b7280', padding: '8px' }}>
+                                                        ...他 {pastePreview.length - 30}行
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button onClick={importFromPaste} className="btn btn-success">
+                                                取り込む
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : activeTab === 'lyric' ? (
                                 <div>
                                     <div className="input-group">
                                         <label className="label">歌詞（改行で複数行）</label>
@@ -481,7 +575,7 @@
                         <div className="card" style={{ background: '#eff6ff', border: '2px solid #3b82f6' }}>
                             <div className="card-title" style={{ color: '#1e40af' }}>💡 使い方まとめ</div>
                             <div style={{ fontSize: '15px', color: '#1e3a8a', lineHeight: '1.8' }}>
-                                <p><strong>🚀 おすすめ:</strong> ブックマークレットで2クリック自動取り込み</p>
+                                <p><strong>🚀 ブックマークレット:</strong> U-FRETで1クリック→自動コピー→貼り付け</p>
                                 <p><strong>✍️ 手動入力:</strong> 歌詞→コードの順で入力</p>
                                 <p><strong>📦 複数選択:</strong> チェックボックスでまとめて移動</p>
                                 <p><strong>🔤 文字調整:</strong> 歌詞の文字をクリックしてサイズ変更</p>
