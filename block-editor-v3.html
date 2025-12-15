@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ブロック式コード譜 v3</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -10,66 +10,74 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; padding-bottom: 80px; }
-        .container { max-width: 100%; padding: 12px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 16px; margin: -12px -12px 16px -12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header h1 { font-size: 20px; font-weight: bold; }
-        .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
-        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #333; }
-        .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-        .tab { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .header h1 { font-size: 28px; font-weight: bold; margin-bottom: 8px; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card-title { font-size: 20px; font-weight: bold; margin-bottom: 16px; color: #333; }
+        .tabs { display: flex; gap: 12px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .tab-inactive { background: #e5e7eb; color: #6b7280; }
         .tab-chord { background: #3b82f6; color: white; }
         .tab-lyric { background: #f59e0b; color: white; }
-        .input-group { margin-bottom: 16px; }
-        .label { display: block; font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+        .input-group { margin-bottom: 20px; }
+        .label { display: block; font-size: 15px; font-weight: 600; color: #374151; margin-bottom: 10px; }
         .input { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; }
         .input:focus { outline: none; border-color: #3b82f6; }
-        .textarea { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; min-height: 120px; resize: vertical; font-family: 'Courier New', monospace; }
+        .textarea { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; min-height: 150px; resize: vertical; font-family: 'Courier New', monospace; }
         .select { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; background: white; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-primary { background: #3b82f6; color: white; }
-        .btn-primary:active { background: #2563eb; }
+        .btn-primary:hover { background: #2563eb; }
         .btn-warning { background: #f59e0b; color: white; }
-        .btn-warning:active { background: #d97706; }
+        .btn-warning:hover { background: #d97706; }
         .btn-success { background: #10b981; color: white; }
-        .btn-success:active { background: #059669; }
-        .btn-small { padding: 8px 12px; font-size: 14px; width: auto; display: inline-block; margin: 4px; }
+        .btn-success:hover { background: #059669; }
+        .btn-small { padding: 10px 16px; font-size: 14px; width: auto; display: inline-block; margin: 4px; }
         .btn-danger { background: #ef4444; color: white; }
-        .btn-danger:active { background: #dc2626; }
-        .key-selector { display: flex; gap: 8px; align-items: center; }
+        .btn-danger:hover { background: #dc2626; }
+        .key-selector { display: flex; gap: 12px; align-items: center; }
         .key-note { flex: 1; }
-        .key-type { display: flex; gap: 8px; }
-        .key-type-btn { flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; background: white; font-weight: 600; cursor: pointer; }
+        .key-type { display: flex; gap: 12px; }
+        .key-type-btn { flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; background: white; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .key-type-btn:hover { background: #f3f4f6; }
         .key-type-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
-        .block-item { background: white; border: 2px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px; }
-        .block-checkbox { width: 24px; height: 24px; margin-top: 4px; cursor: pointer; }
+        .block-item { background: white; border: 2px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px; }
+        .block-checkbox { width: 20px; height: 20px; margin-top: 4px; cursor: pointer; }
         .block-content { flex: 1; }
         .block-chord { border-left: 4px solid #3b82f6; background: #eff6ff; }
         .block-lyric { border-left: 4px solid #f59e0b; background: #fffbeb; }
-        .block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .block-type { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #6b7280; }
+        .block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .block-type { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #6b7280; }
         .block-controls { display: flex; gap: 8px; }
-        .icon-btn { width: 32px; height: 32px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #6b7280; }
-        .icon-btn:active { background: #e5e7eb; }
+        .icon-btn { width: 36px; height: 36px; border: none; border-radius: 6px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #6b7280; transition: all 0.2s; }
+        .icon-btn:hover { background: #e5e7eb; }
         .icon-btn-danger { background: #fee2e2; color: #dc2626; }
-        .insert-position { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 12px; margin-bottom: 16px; max-height: 200px; overflow-y: auto; }
-        .insert-position-item { padding: 10px; margin-bottom: 8px; background: white; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .insert-position-item:active { background: #f3f4f6; }
+        .icon-btn-danger:hover { background: #fecaca; }
+        .insert-position { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 16px; margin-bottom: 20px; max-height: 300px; overflow-y: auto; }
+        .insert-position-item { padding: 12px; margin-bottom: 8px; background: white; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+        .insert-position-item:hover { background: #f3f4f6; }
         .insert-position-item.selected { background: #dbeafe; border-color: #3b82f6; }
-        .preview { background: #f9fafb; border-radius: 8px; padding: 16px; min-height: 150px; }
-        .preview-chord { color: #3b82f6; font-weight: bold; margin-bottom: 4px; }
-        .preview-lyric { margin-bottom: 4px; line-height: 1.6; }
-        .empty-state { text-align: center; padding: 40px 20px; color: #9ca3af; }
-        .badge { display: inline-block; background: #e5e7eb; color: #6b7280; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
-        .hint { font-size: 13px; color: #6b7280; margin-top: 8px; line-height: 1.5; }
-        .selection-controls { position: sticky; top: 0; background: white; padding: 12px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 5; }
-        .char-box { display: inline-block; padding: 4px 6px; margin: 2px; border: 2px solid #e5e7eb; border-radius: 4px; cursor: pointer; min-width: 24px; text-align: center; }
+        .preview { background: #f9fafb; border-radius: 8px; padding: 20px; min-height: 200px; }
+        .preview-chord { color: #3b82f6; font-weight: bold; margin-bottom: 6px; }
+        .preview-lyric { margin-bottom: 6px; line-height: 1.6; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; }
+        .badge { display: inline-block; background: #e5e7eb; color: #6b7280; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .hint { font-size: 14px; color: #6b7280; margin-top: 8px; line-height: 1.6; }
+        .selection-controls { background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
+        .char-box { display: inline-block; padding: 6px 8px; margin: 2px; border: 2px solid #e5e7eb; border-radius: 4px; cursor: pointer; min-width: 28px; text-align: center; transition: all 0.1s; }
+        .char-box:hover { background: #f3f4f6; }
         .char-box.selected { background: #3b82f6; color: white; border-color: #3b82f6; }
-        .bookmarklet-box { background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-        .bookmarklet-code { background: #1f2937; color: #10b981; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 11px; word-break: break-all; margin: 8px 0; max-height: 150px; overflow-y: auto; }
-        .step-list { list-style: none; padding: 0; }
-        .step-list li { padding: 8px 0; padding-left: 28px; position: relative; }
-        .step-list li:before { content: attr(data-step); position: absolute; left: 0; background: #3b82f6; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+        
+        /* ブックマークレット説明 */
+        .setup-box { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 3px solid #f59e0b; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .setup-title { font-size: 22px; font-weight: bold; color: #78350f; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .step { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #f59e0b; }
+        .step-number { display: inline-block; background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: bold; margin-right: 10px; }
+        .bookmarklet-link { display: inline-block; background: #3b82f6; color: white; padding: 16px 24px; border-radius: 8px; font-weight: bold; font-size: 16px; text-decoration: none; margin: 16px 0; cursor: move; border: 3px dashed #1e40af; }
+        .bookmarklet-link:hover { background: #2563eb; }
+        .arrow { font-size: 32px; color: #f59e0b; text-align: center; margin: 12px 0; }
+        .success-msg { background: #d1fae5; border: 2px solid #10b981; border-radius: 8px; padding: 16px; margin-top: 16px; color: #065f46; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -92,7 +100,7 @@
             
             const [selectedBlocks, setSelectedBlocks] = useState([]);
             const [selectedChars, setSelectedChars] = useState([]);
-            const [showBookmarkletGuide, setShowBookmarkletGuide] = useState(true);
+            const [showSetup, setShowSetup] = useState(true);
 
             // URLパラメータから自動読み込み
             useEffect(() => {
@@ -111,7 +119,7 @@
                             }));
                             
                             setBlocks(importedBlocks);
-                            alert(`${importedBlocks.length}個のブロックを読み込みました！`);
+                            setShowSetup(false);
                             
                             // URLをクリーンにする
                             window.history.replaceState({}, '', window.location.pathname);
@@ -240,49 +248,65 @@
                 return keyType === 'minor' ? `${songKey}m` : songKey;
             };
 
+            // アプリのURL（GitHubにアップロード後のURL）
+            const appUrl = 'https://yutaafrk-afk.github.io/my-chord-sheets/block-editor-v3.html';
+
             // ブックマークレットコード
-            const bookmarkletCode = `javascript:(function(){const isChord=t=>{const e=t.trim();return!(!e||e.length>50||/[\\u3040-\\u309F\\u30A0-\\u30FF\\u4E00-\\u9FAF]/.test(e))&&/^[A-G][#b♯♭]?(?:m|maj|min|sus|dim|aug|add|M|6|7|9|11|13)*(?:\\/[A-G][#b♯♭]?)?( +[A-G][#b♯♭]?(?:m|maj|min|sus|dim|aug|add|M|6|7|9|11|13)*(?:\\/[A-G][#b♯♭]?)?)*$/.test(e)};const blocks=[];document.querySelectorAll('pre, code').forEach(el=>{const lines=(el.textContent||'').split('\\n');lines.forEach(line=>{const t=line.trim();if(!t||t.length<1)return;if(isChord(t)){blocks.push({type:'chord',content:t,fontSize:16})}else if(t.length<100){blocks.push({type:'lyric',content:t,fontSize:20,charSizes:t.split('').map(()=>20)})}})});if(blocks.length===0){alert('コード譜を抽出できませんでした');return}const data=JSON.stringify({blocks});const url='https://yutaafrk-afk.github.io/my-chord-sheets/block-editor-v3.html?data='+encodeURIComponent(data);window.location.href=url})();`;
+            const bookmarkletCode = `javascript:(function(){const isChord=t=>{const e=t.trim();return!(!e||e.length>50||/[\\u3040-\\u309F\\u30A0-\\u30FF\\u4E00-\\u9FAF]/.test(e))&&/^[A-G][#b♯♭]?(?:m|maj|min|sus|dim|aug|add|M|6|7|9|11|13)*(?:\\/[A-G][#b♯♭]?)?( +[A-G][#b♯♭]?(?:m|maj|min|sus|dim|aug|add|M|6|7|9|11|13)*(?:\\/[A-G][#b♯♭]?)?)*$/.test(e)};const blocks=[];document.querySelectorAll('pre, code').forEach(el=>{const lines=(el.textContent||'').split('\\n');lines.forEach(line=>{const t=line.trim();if(!t||t.length<1)return;if(isChord(t)){blocks.push({type:'chord',content:t,fontSize:16})}else if(t.length<100){blocks.push({type:'lyric',content:t,fontSize:20,charSizes:t.split('').map(()=>20)})}})});if(blocks.length===0){alert('コード譜を抽出できませんでした');return}const data=JSON.stringify({blocks});const url='${appUrl}?data='+encodeURIComponent(data);window.location.href=url})();`;
 
             return (
                 <div>
                     <div className="header">
                         <h1>🎸 ブロック式コード譜 v3</h1>
-                        <div style={{ fontSize: '13px', marginTop: '4px', opacity: 0.9 }}>
+                        <div style={{ fontSize: '16px', marginTop: '8px', opacity: 0.9 }}>
                             {blocks.length}個のブロック | Key: {getKeyDisplay()}
                         </div>
                     </div>
 
                     <div className="container">
-                        {showBookmarkletGuide && (
-                            <div className="bookmarklet-box">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#92400e' }}>
-                                        ⚡️ U-FRETから自動取り込み
-                                    </div>
+                        {showSetup && (
+                            <div className="setup-box">
+                                <div className="setup-title">
+                                    ⚡️ 初回設定（1回だけ）
                                     <button 
-                                        onClick={() => setShowBookmarkletGuide(false)}
-                                        style={{ border: 'none', background: 'transparent', fontSize: '20px', cursor: 'pointer' }}
+                                        onClick={() => setShowSetup(false)}
+                                        style={{ marginLeft: 'auto', border: 'none', background: 'transparent', fontSize: '24px', cursor: 'pointer', color: '#78350f' }}
                                     >×</button>
                                 </div>
                                 
-                                <ul className="step-list">
-                                    <li data-step="1">下のコードをコピー</li>
-                                    <li data-step="2">ブックマークを新規作成</li>
-                                    <li data-step="3">名前: 「コード譜取込」</li>
-                                    <li data-step="4">URL欄にコードを貼り付け</li>
-                                    <li data-step="5">U-FRETで曲を開く</li>
-                                    <li data-step="6">ブックマークをタップ</li>
-                                </ul>
-
-                                <div className="bookmarklet-code" onClick={(e) => {
-                                    const text = e.target.textContent;
-                                    navigator.clipboard.writeText(text);
-                                    alert('コピーしました！');
-                                }}>
-                                    {bookmarkletCode}
+                                <div className="step">
+                                    <span className="step-number">1</span>
+                                    <strong>下の青いボタンをブックマークバーにドラッグ</strong>
                                 </div>
-                                <div style={{ fontSize: '12px', color: '#92400e', marginTop: '8px' }}>
-                                    💡 タップでコピー
+                                
+                                <div style={{ textAlign: 'center', background: 'white', padding: '20px', borderRadius: '8px', margin: '16px 0' }}>
+                                    <a href={bookmarkletCode} className="bookmarklet-link">
+                                        📎 コード譜取込
+                                    </a>
+                                    <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '8px' }}>
+                                        ↑ このボタンをブックマークバーにドラッグ&ドロップ
+                                    </div>
+                                </div>
+
+                                <div className="arrow">↓</div>
+
+                                <div className="step">
+                                    <span className="step-number">2</span>
+                                    <strong>U-FRETで曲のページを開く</strong>
+                                    <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '6px' }}>
+                                        例: https://www.ufret.jp/song.php?data=73678
+                                    </div>
+                                </div>
+
+                                <div className="arrow">↓</div>
+
+                                <div className="step">
+                                    <span className="step-number">3</span>
+                                    <strong>ブックマークバーの「コード譜取込」をクリック</strong>
+                                </div>
+
+                                <div className="success-msg">
+                                    ✅ 自動的にこのページに戻ってきてコード譜が取り込まれます！
                                 </div>
                             </div>
                         )}
@@ -329,8 +353,8 @@
                             ) : (
                                 <div>
                                     {blocks.length === 0 ? (
-                                        <div className="empty-state" style={{ padding: '20px' }}>
-                                            <div style={{ fontSize: '16px', color: '#6b7280' }}>先に歌詞を入力してください</div>
+                                        <div className="empty-state" style={{ padding: '40px' }}>
+                                            <div style={{ fontSize: '18px', color: '#6b7280' }}>先に歌詞を入力してください</div>
                                         </div>
                                     ) : (
                                         <>
@@ -341,14 +365,14 @@
                                                 </div>
                                                 {blocks.map((block, idx) => (
                                                     <div key={block.id} className={`insert-position-item ${insertPosition?.type === 'after' && insertPosition?.index === idx ? 'selected' : ''}`} onClick={() => setInsertPosition({ type: 'after', index: idx })}>
-                                                        <span>{block.type === 'chord' ? '🎵' : '🎤'} {block.content.substring(0, 20)}{block.content.length > 20 ? '...' : ''}</span>
-                                                        <span style={{ color: '#6b7280', fontSize: '12px' }}>← この後</span>
+                                                        <span>{block.type === 'chord' ? '🎵' : '🎤'} {block.content.substring(0, 30)}{block.content.length > 30 ? '...' : ''}</span>
+                                                        <span style={{ color: '#6b7280', fontSize: '13px' }}>← この後</span>
                                                     </div>
                                                 ))}
                                             </div>
                                             <div className="input-group">
                                                 <label className="label">コード（改行で複数行）</label>
-                                                <textarea value={chordInput} onChange={(e) => setChordInput(e.target.value)} className="textarea" placeholder="C&#10;Am&#10;F&#10;G" style={{ minHeight: '100px' }}></textarea>
+                                                <textarea value={chordInput} onChange={(e) => setChordInput(e.target.value)} className="textarea" placeholder="C&#10;Am&#10;F&#10;G" style={{ minHeight: '120px' }}></textarea>
                                             </div>
                                             <div className="input-group">
                                                 <label className="label">文字サイズ</label>
@@ -367,7 +391,7 @@
                             <div className="card">
                                 <div className="card-title">選択文字の操作</div>
                                 <div className="input-group">
-                                    <div style={{ background: '#dbeafe', padding: '8px 12px', borderRadius: '8px', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
+                                    <div style={{ background: '#dbeafe', padding: '10px 14px', borderRadius: '8px', marginBottom: '12px', fontSize: '15px', fontWeight: '600' }}>
                                         {selectedChars.length}文字選択中
                                     </div>
                                     <label className="label">文字サイズ変更</label>
@@ -383,7 +407,7 @@
                             <div className="card-title">ブロック一覧</div>
                             {selectedBlocks.length > 0 && (
                                 <div className="selection-controls">
-                                    <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>{selectedBlocks.length}個選択中</div>
+                                    <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>{selectedBlocks.length}個選択中</div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button onClick={moveSelectedBlocksUp} className="btn btn-small btn-primary">↑ 上へ</button>
                                         <button onClick={moveSelectedBlocksDown} className="btn btn-small btn-primary">↓ 下へ</button>
@@ -394,12 +418,12 @@
                             )}
                             {blocks.length === 0 ? (
                                 <div className="empty-state">
-                                    <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎸</div>
-                                    <div>ブックマークレットで取り込むか<br/>歌詞を入力してください</div>
+                                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎸</div>
+                                    <div style={{ fontSize: '18px' }}>ブックマークレットで取り込むか<br/>歌詞を入力してください</div>
                                 </div>
                             ) : (
                                 <div>
-                                    <div style={{ marginBottom: '12px' }}>
+                                    <div style={{ marginBottom: '16px' }}>
                                         <button onClick={toggleSelectAll} className="btn btn-small" style={{ background: '#e5e7eb' }}>
                                             {selectedBlocks.length === blocks.length ? '全解除' : '全選択'}
                                         </button>
@@ -439,7 +463,7 @@
                         {blocks.length > 0 && (
                             <div className="card">
                                 <div className="card-title">プレビュー</div>
-                                <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#6b7280' }}>Key: {getKeyDisplay()}</div>
+                                <div style={{ marginBottom: '12px', fontSize: '15px', fontWeight: '600', color: '#6b7280' }}>Key: {getKeyDisplay()}</div>
                                 <div className="preview">
                                     {blocks.map((block) => (
                                         <div key={block.id}>
@@ -454,13 +478,13 @@
                             </div>
                         )}
 
-                        <div className="card" style={{ background: '#fffbeb', border: '2px solid #fbbf24' }}>
-                            <div className="card-title" style={{ color: '#92400e' }}>💡 使い方</div>
-                            <div style={{ fontSize: '14px', color: '#78350f', lineHeight: '1.8' }}>
-                                <p><strong>ブックマークレット:</strong> U-FRETから2タップで自動取り込み</p>
-                                <p><strong>手動入力:</strong> 歌詞→コードの順で入力</p>
-                                <p><strong>複数選択:</strong> チェックボックスでまとめて移動</p>
-                                <p><strong>文字調整:</strong> 歌詞の文字をタップしてサイズ変更</p>
+                        <div className="card" style={{ background: '#eff6ff', border: '2px solid #3b82f6' }}>
+                            <div className="card-title" style={{ color: '#1e40af' }}>💡 使い方まとめ</div>
+                            <div style={{ fontSize: '15px', color: '#1e3a8a', lineHeight: '1.8' }}>
+                                <p><strong>🚀 おすすめ:</strong> ブックマークレットで2クリック自動取り込み</p>
+                                <p><strong>✍️ 手動入力:</strong> 歌詞→コードの順で入力</p>
+                                <p><strong>📦 複数選択:</strong> チェックボックスでまとめて移動</p>
+                                <p><strong>🔤 文字調整:</strong> 歌詞の文字をクリックしてサイズ変更</p>
                             </div>
                         </div>
                     </div>
