@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ブロック式コード譜 v3</title>
+    <title>ブロック式コード譜 v3 - URL読み込み</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -20,6 +20,7 @@
         .tab-inactive { background: #e5e7eb; color: #6b7280; }
         .tab-chord { background: #3b82f6; color: white; }
         .tab-lyric { background: #f59e0b; color: white; }
+        .tab-url { background: #8b5cf6; color: white; }
         .input-group { margin-bottom: 16px; }
         .label { display: block; font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 8px; }
         .input { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; }
@@ -29,10 +30,14 @@
         .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-primary { background: #3b82f6; color: white; }
         .btn-primary:active { background: #2563eb; }
+        .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
         .btn-warning { background: #f59e0b; color: white; }
         .btn-warning:active { background: #d97706; }
         .btn-success { background: #10b981; color: white; }
         .btn-success:active { background: #059669; }
+        .btn-purple { background: #8b5cf6; color: white; }
+        .btn-purple:active { background: #7c3aed; }
+        .btn-purple:disabled { background: #9ca3af; cursor: not-allowed; }
         .btn-small { padding: 8px 12px; font-size: 14px; width: auto; display: inline-block; margin: 4px; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-danger:active { background: #dc2626; }
@@ -65,6 +70,18 @@
         .selection-controls { position: sticky; top: 0; background: white; padding: 12px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 5; }
         .char-box { display: inline-block; padding: 4px 6px; margin: 2px; border: 2px solid #e5e7eb; border-radius: 4px; cursor: pointer; min-width: 24px; text-align: center; }
         .char-box.selected { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .import-preview { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 12px; margin-top: 12px; max-height: 300px; overflow-y: auto; }
+        .import-preview-item { padding: 8px; margin-bottom: 4px; border-radius: 4px; }
+        .import-preview-chord { background: #dbeafe; color: #1e40af; font-weight: bold; }
+        .import-preview-lyric { background: #fef3c7; color: #78350f; }
+        .loading { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 20px; color: #6b7280; }
+        .spinner { width: 20px; height: 20px; border: 3px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-box { background: #fee2e2; border: 2px solid #ef4444; color: #991b1b; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 14px; }
+        .url-input-row { display: flex; gap: 8px; }
+        .url-input-row .input { flex: 1; }
+        .url-input-row .btn { width: auto; padding: 12px 20px; white-space: nowrap; }
+        .debug-info { background: #f3f4f6; border: 2px solid #d1d5db; border-radius: 8px; padding: 12px; margin-top: 12px; font-size: 12px; font-family: monospace; max-height: 200px; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -74,7 +91,7 @@
 
         const BlockEditor = () => {
             const [blocks, setBlocks] = useState([]);
-            const [activeTab, setActiveTab] = useState('lyric');
+            const [activeTab, setActiveTab] = useState('url');
             const [songKey, setSongKey] = useState('C');
             const [keyType, setKeyType] = useState('major');
             
@@ -85,8 +102,194 @@
             const [chordSize, setChordSize] = useState(16);
             const [insertPosition, setInsertPosition] = useState(null);
             
+            const [urlInput, setUrlInput] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [loadError, setLoadError] = useState('');
+            const [importPreview, setImportPreview] = useState([]);
+            const [debugInfo, setDebugInfo] = useState('');
+            
             const [selectedBlocks, setSelectedBlocks] = useState([]);
             const [selectedChars, setSelectedChars] = useState([]);
+
+            // コード判定（より厳密に）
+            const isChordLine = (line) => {
+                const trimmed = line.trim();
+                if (!trimmed) return false;
+                if (trimmed.length > 50) return false; // 長すぎる行は歌詞
+                
+                // 日本語が含まれていたら歌詞
+                if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(trimmed)) return false;
+                
+                // コードパターン
+                const chordPattern = /^[A-G][#b♯♭]?(?:m|maj|min|sus|dim|aug|add|M|6|7|9|11|13)*(?:\/[A-G][#b♯♭]?)?(\s+[A-G][#b♯♭]?(?:m|maj|min|sus|dim|aug|add|M|6|7|9|11|13)*(?:\/[A-G][#b♯♭]?)?)*$/;
+                return chordPattern.test(trimmed);
+            };
+
+            // URLからコード譜を取得
+            const fetchFromUrl = async () => {
+                if (!urlInput.trim()) {
+                    alert('URLを入力してください');
+                    return;
+                }
+
+                setIsLoading(true);
+                setLoadError('');
+                setImportPreview([]);
+                setDebugInfo('読み込み開始...\n');
+
+                // 複数のCORSプロキシ
+                const proxies = [
+                    { name: 'AllOrigins', url: `https://api.allorigins.win/raw?url=${encodeURIComponent(urlInput)}` },
+                    { name: 'CORS.SH', url: `https://cors.sh/${urlInput}` },
+                    { name: 'ThingProxy', url: `https://thingproxy.freeboard.io/fetch/${urlInput}` }
+                ];
+
+                for (const proxy of proxies) {
+                    try {
+                        setDebugInfo(prev => prev + `\n${proxy.name}を試行中...`);
+                        
+                        const response = await fetch(proxy.url, {
+                            headers: proxy.name === 'CORS.SH' ? { 'x-cors-api-key': 'temp_4e2f3c8a1d9b5f7e6a0c2d8e9f1a3b5c' } : {}
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+
+                        const html = await response.text();
+                        setDebugInfo(prev => prev + `\n✓ ${proxy.name}成功！HTMLを取得しました`);
+
+                        // HTMLをパース
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        // 抽出を試みる
+                        let extracted = extractFromUfret(doc);
+                        
+                        if (extracted.length === 0) {
+                            setDebugInfo(prev => prev + '\nU-FRET形式で抽出失敗、汎用パースを試行...');
+                            extracted = extractGeneric(doc);
+                        }
+
+                        if (extracted.length === 0) {
+                            throw new Error('コード譜を抽出できませんでした');
+                        }
+
+                        setDebugInfo(prev => prev + `\n✓ ${extracted.length}行を抽出しました！`);
+                        setImportPreview(extracted);
+                        setIsLoading(false);
+                        return;
+
+                    } catch (error) {
+                        setDebugInfo(prev => prev + `\n✗ ${proxy.name}失敗: ${error.message}`);
+                        continue;
+                    }
+                }
+
+                // すべて失敗
+                setLoadError('すべてのプロキシで読み込みに失敗しました。\n\n手動で歌詞とコードを入力してください。');
+                setIsLoading(false);
+            };
+
+            // U-FRET形式の抽出
+            const extractFromUfret = (doc) => {
+                const results = [];
+                
+                // <pre>タグを探す
+                const preElements = doc.querySelectorAll('pre, code, [class*="chord"], [class*="lyric"]');
+                
+                preElements.forEach(element => {
+                    const text = element.textContent || element.innerText;
+                    const lines = text.split('\n');
+                    
+                    lines.forEach(line => {
+                        const trimmed = line.trim();
+                        if (!trimmed || trimmed.length < 1) return;
+                        
+                        if (isChordLine(trimmed)) {
+                            results.push({
+                                type: 'chord',
+                                content: trimmed,
+                                fontSize: chordSize
+                            });
+                        } else if (trimmed.length > 0 && trimmed.length < 100) {
+                            results.push({
+                                type: 'lyric',
+                                content: trimmed,
+                                fontSize: lyricSize,
+                                charSizes: trimmed.split('').map(() => lyricSize)
+                            });
+                        }
+                    });
+                });
+
+                return results;
+            };
+
+            // 汎用的な抽出
+            const extractGeneric = (doc) => {
+                const results = [];
+                
+                // bodyからテキストを取得
+                const bodyText = doc.body ? doc.body.textContent : '';
+                const lines = bodyText.split('\n');
+                
+                let validLines = 0;
+                
+                lines.forEach(line => {
+                    const trimmed = line.trim();
+                    
+                    // 空行、短すぎる、長すぎる行をスキップ
+                    if (!trimmed || trimmed.length < 1 || trimmed.length > 100) return;
+                    
+                    // HTMLタグっぽいものをスキップ
+                    if (/<[^>]+>/.test(trimmed)) return;
+                    
+                    // URL、メールなどをスキップ
+                    if (/^(https?:\/\/|www\.|@)/.test(trimmed)) return;
+                    
+                    validLines++;
+                    
+                    if (isChordLine(trimmed)) {
+                        results.push({
+                            type: 'chord',
+                            content: trimmed,
+                            fontSize: chordSize
+                        });
+                    } else {
+                        results.push({
+                            type: 'lyric',
+                            content: trimmed,
+                            fontSize: lyricSize,
+                            charSizes: trimmed.split('').map(() => lyricSize)
+                        });
+                    }
+                    
+                    // 100行以上取得したら停止
+                    if (validLines >= 100) return;
+                });
+
+                return results;
+            };
+
+            // 取り込み実行
+            const executeImport = () => {
+                if (importPreview.length === 0) {
+                    alert('取り込むデータがありません');
+                    return;
+                }
+
+                const newBlocks = importPreview.map((item, idx) => ({
+                    ...item,
+                    id: Date.now() + idx
+                }));
+
+                setBlocks([...blocks, ...newBlocks]);
+                setImportPreview([]);
+                setUrlInput('');
+                setDebugInfo('');
+                alert(`${newBlocks.length}個のブロックを追加しました！`);
+            };
 
             const addLyric = () => {
                 if (!lyricInput.trim()) return;
@@ -237,11 +440,79 @@
                             <div className="card-title">入力</div>
                             
                             <div className="tabs">
+                                <button onClick={() => setActiveTab('url')} className={`tab ${activeTab === 'url' ? 'tab-url' : 'tab-inactive'}`}>🔗 URL</button>
                                 <button onClick={() => setActiveTab('lyric')} className={`tab ${activeTab === 'lyric' ? 'tab-lyric' : 'tab-inactive'}`}>🎤 歌詞</button>
                                 <button onClick={() => setActiveTab('chord')} className={`tab ${activeTab === 'chord' ? 'tab-chord' : 'tab-inactive'}`}>🎵 コード</button>
                             </div>
 
-                            {activeTab === 'lyric' ? (
+                            {activeTab === 'url' ? (
+                                <div>
+                                    <div className="input-group">
+                                        <label className="label">U-FRETのURL</label>
+                                        <div className="url-input-row">
+                                            <input
+                                                type="url"
+                                                value={urlInput}
+                                                onChange={(e) => setUrlInput(e.target.value)}
+                                                onPaste={(e) => {
+                                                    setTimeout(() => setUrlInput(e.target.value), 10);
+                                                }}
+                                                className="input"
+                                                placeholder="https://www.ufret.jp/song.php?data=..."
+                                                disabled={isLoading}
+                                            />
+                                            <button onClick={fetchFromUrl} className="btn btn-purple" disabled={isLoading}>
+                                                {isLoading ? '読込中' : '読み込む'}
+                                            </button>
+                                        </div>
+                                        <div className="hint">
+                                            💡 U-FRETのURLを貼り付けて「読み込む」ボタンをタップ
+                                        </div>
+                                    </div>
+
+                                    {isLoading && (
+                                        <div className="loading">
+                                            <div className="spinner"></div>
+                                            <span>読み込み中...</span>
+                                        </div>
+                                    )}
+
+                                    {debugInfo && (
+                                        <div className="debug-info">
+                                            {debugInfo}
+                                        </div>
+                                    )}
+
+                                    {loadError && (
+                                        <div className="error-box">
+                                            ❌ {loadError}
+                                        </div>
+                                    )}
+
+                                    {importPreview.length > 0 && (
+                                        <div className="import-preview">
+                                            <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#065f46' }}>
+                                                ✓ プレビュー（{importPreview.length}行）
+                                            </div>
+                                            <div style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '12px' }}>
+                                                {importPreview.slice(0, 30).map((item, idx) => (
+                                                    <div key={idx} className={`import-preview-item ${item.type === 'chord' ? 'import-preview-chord' : 'import-preview-lyric'}`}>
+                                                        {item.type === 'chord' ? '🎵' : '🎤'} {item.content}
+                                                    </div>
+                                                ))}
+                                                {importPreview.length > 30 && (
+                                                    <div style={{ textAlign: 'center', color: '#6b7280', padding: '8px' }}>
+                                                        ...他 {importPreview.length - 30}行
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button onClick={executeImport} className="btn btn-success">
+                                                取り込む
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : activeTab === 'lyric' ? (
                                 <div>
                                     <div className="input-group">
                                         <label className="label">歌詞（改行で複数行）</label>
@@ -324,7 +595,7 @@
                             {blocks.length === 0 ? (
                                 <div className="empty-state">
                                     <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎸</div>
-                                    <div>歌詞を追加してください</div>
+                                    <div>URLから読み込むか歌詞を入力してください</div>
                                 </div>
                             ) : (
                                 <div>
@@ -386,11 +657,10 @@
                         <div className="card" style={{ background: '#fffbeb', border: '2px solid #fbbf24' }}>
                             <div className="card-title" style={{ color: '#92400e' }}>💡 使い方</div>
                             <div style={{ fontSize: '14px', color: '#78350f', lineHeight: '1.8' }}>
-                                <p><strong>1. キー選択:</strong> 曲のキーとメジャー/マイナーを選択</p>
-                                <p><strong>2. 歌詞入力:</strong> まず歌詞を全部入力</p>
-                                <p><strong>3. コード追加:</strong> 挿入位置を選んでコード入力</p>
-                                <p><strong>4. 複数選択:</strong> チェックボックスで選択してまとめて移動</p>
-                                <p><strong>5. 文字調整:</strong> 歌詞の文字をタップして選択→サイズ変更</p>
+                                <p><strong>1. URL読み込み:</strong> U-FRETのURLを貼り付けて自動取り込み</p>
+                                <p><strong>2. 手動入力:</strong> 歌詞→コードの順で入力</p>
+                                <p><strong>3. 複数選択:</strong> チェックボックスでまとめて移動</p>
+                                <p><strong>4. 文字調整:</strong> 歌詞の文字をタップしてサイズ変更</p>
                             </div>
                         </div>
                     </div>
